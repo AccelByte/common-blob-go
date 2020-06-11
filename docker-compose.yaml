@@ -1,0 +1,26 @@
+# Copyright (c) 2020 AccelByte Inc. All Rights Reserved.
+# This is licensed software from AccelByte Inc, for limitations
+# and restrictions contact your company contract manager.
+
+version: '3'
+services:
+  localstack:
+    image: localstack/localstack:0.11.2
+    ports:
+      - "4572:4572"
+    environment:
+      - SERVICES=s3
+    networks:
+      - resource-network
+
+  fake-gcs-server:
+    image: fsouza/fake-gcs-server:v1.19.4
+    ports:
+      - 4443:4443
+    entrypoint: /bin/fake-gcs-server -data /data -scheme http -backend memory -public-host 0.0.0.0:4443
+    networks:
+      - resource-network
+
+networks:
+  resource-network:
+    driver: bridge
