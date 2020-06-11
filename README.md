@@ -14,10 +14,10 @@ go get -u github.com/AccelByte/common-blob-go
 ### Importing
 
 ```go
-eventstream "github.com/AccelByte/common-blob-go"
+commonblobgo "github.com/AccelByte/common-blob-go"
 ```
 
-To create a new event stream client, use this function:
+To create a new storage client, use this function:
 
 ```go
 storage, err := storage, err := NewCloudStorage(
