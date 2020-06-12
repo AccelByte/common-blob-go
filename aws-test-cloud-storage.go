@@ -6,7 +6,6 @@ package commonblobgo
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -145,7 +144,7 @@ func (ts *AWSTestCloudStorage) CreateBucket(ctx context.Context, bucketPrefix st
 		return err
 	}
 
-	fmt.Printf("Bucket %v created.\n", ts.bucketName)
+	logrus.Printf("Bucket %v created.\n", ts.bucketName)
 
 	return nil
 }

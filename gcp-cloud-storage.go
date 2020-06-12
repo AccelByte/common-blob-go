@@ -140,7 +140,7 @@ func (ts *GCPCloudStorage) GetSignedURL(ctx context.Context, key string, expiry 
 		GoogleAccessID: ts.googleAccessID,
 		PrivateKey:     []byte(ts.privateKey),
 		Method:         "GET",
-		Expires:        time.Now().Add(expiry),
+		Expires:        time.Now().Add(expiry).UTC(),
 	})
 }
 
