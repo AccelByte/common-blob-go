@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/github/AccelByte/common-blob-go.svg?branch=master)](https://travis-ci.com/github/AccelByte/common-blob-go)
+[![Build Status](https://travis-ci.com/AccelByte/common-blob-go.svg?branch=master)](https://travis-ci.com/AccelByte/common-blob-go)
 
 # common-blob-go
 Go library to work with AWS(amazon web services) S3 and GCP(google cloud platform) cloud storage
