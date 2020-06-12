@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/AccelByte/common-blob-go.svg?branch=master)](https://travis-ci.com/AccelByte/common-blob-go)
+[![Build Status](https://travis-ci.com/github/AccelByte/common-blob-go.svg?branch=master)](https://travis-ci.com/github/AccelByte/common-blob-go)
 
 # common-blob-go
 Go library to work with AWS(amazon web services) S3 and GCP(google cloud platform) cloud storage
@@ -66,26 +66,25 @@ type CloudStorage interface {
 
 ##### List(ctx context.Context, prefix string) *ListIterator
 ```go
-	list := storage.List(s.ctx, s.bucketPrefix)
+    list := storage.List(s.ctx, s.bucketPrefix)
 
-	for {
-		item, err := list.Next(s.ctx)
-		if err == io.EOF {
-			break // no more object
-		}
+    for {
+        item, err := list.Next(s.ctx)
+        if err == io.EOF {
+            break // no more object
+        }
 
         // ...
 
-		if item.Key == fileName {
-			fileFound = true
-		}
-	}
-
+        if item.Key == fileName {
+            fileFound = true
+        }
+    }
 ```
 
 ##### Get(ctx context.Context, key string) ([]byte, error)
 ```go
-	storedBody, err := storage.Get(s.ctx, fileName)
+    storedBody, err := storage.Get(s.ctx, fileName)
     if err != nil { 
         return nil, err
     }   
@@ -95,7 +94,7 @@ type CloudStorage interface {
 
 ##### Delete(ctx context.Context, key string) error
 ```go
-	err = storage.Delete(s.ctx, fileName)
+    err = storage.Delete(s.ctx, fileName)
     if err != nil { 
         return nil, err
     }   
@@ -103,7 +102,7 @@ type CloudStorage interface {
 
 ##### CreateBucket(ctx context.Context, bucketPrefix string, expirationTimeDays int64) error
 ```go
-	err = storage.CreateBucket(s.ctx, s.bucketPrefix, 1)
+    err = storage.CreateBucket(s.ctx, s.bucketPrefix, 1)
     if err != nil { 
         return nil, err
     }   
@@ -111,25 +110,25 @@ type CloudStorage interface {
 
 ##### Close()
 ```go
-storage, err := storage, err := NewCloudStorage(
-    ctx,
-    isTesting,
-    bucketProvider,
-    bucketName,
-    awsS3Endpoint,
-    awsS3Region,
-    awsS3AccessKeyID,
-    awsS3SecretAccessKey,
-    gcpCredentialsJSON,
-    gcpStorageEmulatorHost,
-)
+    storage, err := storage, err := NewCloudStorage(
+        ctx,
+        isTesting,
+        bucketProvider,
+        bucketName,
+        awsS3Endpoint,
+        awsS3Region,
+        awsS3AccessKeyID,
+        awsS3SecretAccessKey,
+        gcpCredentialsJSON,
+        gcpStorageEmulatorHost,
+    )
 
-defer storage.Close()
+    defer storage.Close()
 ```
 
 ##### GetSignedURL(ctx context.Context, key string, expiry time.Duration) (string, error)
 ```go
-	url, err := storage.GetSignedURL(s.ctx, fileName, time.Hour)
+    url, err := storage.GetSignedURL(s.ctx, fileName, time.Hour)
     if err != nil { 
         return nil, err
     }   
@@ -139,7 +138,7 @@ defer storage.Close()
 
 ##### Write(ctx context.Context, key string, body []byte, contentType *string) error
 ```go
-	err := s.storage.Write(s.ctx, fileName, bodyBytes, nil)
+    err := s.storage.Write(s.ctx, fileName, bodyBytes, nil)
     if err != nil { 
         return nil, err
     }   
@@ -147,7 +146,7 @@ defer storage.Close()
 
 ##### Attributes(ctx context.Context, key string) (*Attributes, error)
 ```go
-	attrs, err := s.storage.Attributes(s.ctx, fileName)
+    attrs, err := s.storage.Attributes(s.ctx, fileName)
     if err != nil { 
         return nil, err
     }   
