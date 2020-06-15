@@ -1,4 +1,4 @@
-module accelbyte.net/common-blob-go
+module github.com/AccelByte/common-blob-go
 
 go 1.13
 
