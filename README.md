@@ -68,10 +68,10 @@ type CloudStorage interface {
 
 ##### List(ctx context.Context, prefix string) *ListIterator
 ```go
-    list := storage.List(s.ctx, s.bucketPrefix)
+    list := storage.List(ctx, bucketPrefix)
 
     for {
-        item, err := list.Next(s.ctx)
+        item, err := list.Next(ctx)
         if err == io.EOF {
             break // no more object
         }
@@ -86,7 +86,7 @@ type CloudStorage interface {
 
 ##### Get(ctx context.Context, key string) ([]byte, error)
 ```go
-    storedBody, err := storage.Get(s.ctx, fileName)
+    storedBody, err := storage.Get(ctx, fileName)
     if err != nil { 
         return nil, err
     }   
@@ -96,7 +96,7 @@ type CloudStorage interface {
 
 ##### GetReader(ctx context.Context, key string) (io.ReadCloser, error)
 ```go
-    reader, err := storage.GetReader(s.ctx, fileName)
+    reader, err := storage.GetReader(ctx, fileName)
     if err != nil { 
         return nil, err
     }
@@ -108,7 +108,7 @@ type CloudStorage interface {
 
 ##### Delete(ctx context.Context, key string) error
 ```go
-    err = storage.Delete(s.ctx, fileName)
+    err = storage.Delete(ctx, fileName)
     if err != nil { 
         return nil, err
     }   
@@ -116,7 +116,7 @@ type CloudStorage interface {
 
 ##### CreateBucket(ctx context.Context, bucketPrefix string, expirationTimeDays int64) error
 ```go
-    err = storage.CreateBucket(s.ctx, s.bucketPrefix, 1)
+    err = storage.CreateBucket(ctx, bucketPrefix, 1)
     if err != nil { 
         return nil, err
     }   
@@ -142,7 +142,7 @@ type CloudStorage interface {
 
 ##### GetSignedURL(ctx context.Context, key string, expiry time.Duration) (string, error)
 ```go
-    url, err := storage.GetSignedURL(s.ctx, fileName, time.Hour)
+    url, err := storage.GetSignedURL(ctx, fileName, time.Hour)
     if err != nil { 
         return nil, err
     }   
@@ -152,7 +152,7 @@ type CloudStorage interface {
 
 ##### Write(ctx context.Context, key string, body []byte, contentType *string) error
 ```go
-    err := s.storage.Write(s.ctx, fileName, bodyBytes, nil)
+    err := storage.Write(ctx, fileName, bodyBytes, nil)
     if err != nil { 
         return nil, err
     }   
@@ -162,7 +162,7 @@ type CloudStorage interface {
 ```go
 	body := []byte(`{"key": "value", "key2": "value2"}`)
 
-	writer, err := storage.GetWriter(s.ctx, fileName)
+	writer, err := storage.GetWriter(ctx, fileName)
     if err != nil { 
         return nil, err
     }   
@@ -190,7 +190,7 @@ type CloudStorage interface {
 
 ##### Attributes(ctx context.Context, key string) (*Attributes, error)
 ```go
-    attrs, err := s.storage.Attributes(s.ctx, fileName)
+    attrs, err := storage.Attributes(ctx, fileName)
     if err != nil { 
         return nil, err
     }   
