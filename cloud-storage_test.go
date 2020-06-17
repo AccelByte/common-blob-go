@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -173,6 +174,38 @@ func (s *Suite) TestWriteAndGet() {
 	storedBody, err := s.storage.Get(s.ctx, fileName)
 	s.Require().NoError(err)
 	s.Require().NotEmpty(storedBody)
+
+	s.Require().JSONEq(string(body), string(storedBody))
+}
+
+func (s *Suite) TestWriteAndGetUsingReaderAndWriter() {
+	fileName := s.generateFileName()
+	body := []byte(`{"key": "value", "key2": "value2"}`)
+
+	writer, err := s.storage.GetWriter(s.ctx, fileName)
+	s.Require().NoError(err)
+
+	_, err = writer.Write(body[:10])
+	s.Require().NoError(err)
+
+	_, err = writer.Write(body[10:20])
+	s.Require().NoError(err)
+
+	_, err = writer.Write(body[20:])
+	s.Require().NoError(err)
+
+	err = writer.Close()
+	s.Require().NoError(err)
+
+	reader, err := s.storage.GetReader(s.ctx, fileName)
+	s.Require().NoError(err)
+
+	storedBody, err := ioutil.ReadAll(reader)
+	s.Require().NoError(err)
+	s.Require().NotEmpty(storedBody)
+
+	err = reader.Close()
+	s.Require().NoError(err)
 
 	s.Require().JSONEq(string(body), string(storedBody))
 }

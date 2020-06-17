@@ -18,6 +18,7 @@ package commonblobgo
 
 import (
 	"context"
+	"io"
 	"strings"
 	"time"
 
@@ -104,6 +105,14 @@ func (ts *AWSTestCloudStorage) List(ctx context.Context, prefix string) *ListIte
 
 func (ts *AWSTestCloudStorage) Get(ctx context.Context, key string) ([]byte, error) {
 	return ts.bucket.ReadAll(ctx, key)
+}
+
+func (ts *AWSTestCloudStorage) GetReader(ctx context.Context, key string) (io.ReadCloser, error) {
+	return ts.bucket.NewReader(ctx, key, nil)
+}
+
+func (ts *AWSTestCloudStorage) GetWriter(ctx context.Context, key string) (io.WriteCloser, error) {
+	return ts.bucket.NewWriter(ctx, key, nil)
 }
 
 func (ts *AWSTestCloudStorage) CreateBucket(ctx context.Context, bucketPrefix string, expirationTimeDays int64) error {

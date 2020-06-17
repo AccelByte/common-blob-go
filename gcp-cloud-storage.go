@@ -20,6 +20,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -54,9 +56,24 @@ func newGCPCloudStorage(
 	bucketName string,
 ) (*GCPCloudStorage, error) {
 	// create vanilla GCP client
-	creds, err := google.CredentialsFromJSON(ctx, []byte(gcpCredentialJSON), storage.ScopeFullControl)
-	if err != nil {
-		return nil, fmt.Errorf("unable to initialize GCP creds: %v", err)
+	var err error
+
+	var creds *google.Credentials
+
+	if gcpCredentialJSON != "" {
+		creds, err = google.CredentialsFromJSON(ctx, []byte(gcpCredentialJSON), storage.ScopeFullControl)
+		if err != nil {
+			return nil, fmt.Errorf("unable to initialize GCP creds from JSON: %v", err)
+		}
+	} else {
+		creds, err = gcp.DefaultCredentials(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("unable to initialize GCP creds from default credentials: %v", err)
+		}
+	}
+
+	if creds == nil {
+		return nil, fmt.Errorf("unable to initialize GCP creds from default credentials: %v", err)
 	}
 
 	client, err := storage.NewClient(ctx, option.WithCredentials(creds))
@@ -64,23 +81,19 @@ func newGCPCloudStorage(
 		return nil, fmt.Errorf("unable to create GCP client: %v", err)
 	}
 
-	// create bucket
-	jsonData := []byte(gcpCredentialJSON)
-
-	gcpCreds, err := google.CredentialsFromJSON(ctx, jsonData, storage.ScopeFullControl)
-	if err != nil {
-		return nil, fmt.Errorf("unable to initialize GCP creds: %v", err)
-	}
-
 	bucketHTTPClient, err := gcp.NewHTTPClient(
 		gcp.DefaultTransport(),
-		gcp.CredentialsTokenSource(gcpCreds),
+		gcp.CredentialsTokenSource(creds),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create GCP HTTP Client: %v", err)
 	}
 
 	var signature signature
+
+	if gcpCredentialJSON == "" {
+		gcpCredentialJSON = string(creds.JSON)
+	}
 
 	err = json.Unmarshal([]byte(gcpCredentialJSON), &signature)
 	if err != nil {
@@ -103,7 +116,7 @@ func newGCPCloudStorage(
 		client:         client,
 		bucketName:     bucketName,
 		bucket:         bucket,
-		projectID:      gcpCreds.ProjectID,
+		projectID:      creds.ProjectID,
 		googleAccessID: signature.GoogleAccessID,
 		privateKey:     signature.PrivateKey,
 		bucketCloseFunc: func() {
@@ -138,6 +151,14 @@ func (ts *GCPCloudStorage) Get(ctx context.Context, key string) ([]byte, error) 
 	return body, err
 }
 
+func (ts *GCPCloudStorage) GetReader(ctx context.Context, key string) (io.ReadCloser, error) {
+	return ts.bucket.NewReader(ctx, key, nil)
+}
+
+func (ts *GCPCloudStorage) GetWriter(ctx context.Context, key string) (io.WriteCloser, error) {
+	return ts.bucket.NewWriter(ctx, key, nil)
+}
+
 func (ts *GCPCloudStorage) CreateBucket(ctx context.Context, bucketPrefix string, expirationTimeDays int64) error {
 	// not supported for prod
 	return nil
@@ -151,7 +172,7 @@ func (ts *GCPCloudStorage) GetSignedURL(ctx context.Context, key string, expiry 
 	return storage.SignedURL(ts.bucketName, key, &storage.SignedURLOptions{
 		GoogleAccessID: ts.googleAccessID,
 		PrivateKey:     []byte(ts.privateKey),
-		Method:         "GET",
+		Method:         http.MethodGet,
 		Expires:        time.Now().Add(expiry).UTC(),
 	})
 }
