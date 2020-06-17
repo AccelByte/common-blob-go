@@ -18,6 +18,7 @@ package commonblobgo
 
 import (
 	"context"
+	"io"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -98,6 +99,14 @@ func (ts *AWSCloudStorage) List(ctx context.Context, prefix string) *ListIterato
 
 func (ts *AWSCloudStorage) Get(ctx context.Context, key string) ([]byte, error) {
 	return ts.bucket.ReadAll(ctx, key)
+}
+
+func (ts *AWSCloudStorage) GetReader(ctx context.Context, key string) (io.ReadCloser, error) {
+	return ts.bucket.NewReader(ctx, key, nil)
+}
+
+func (ts *AWSCloudStorage) GetWriter(ctx context.Context, key string) (io.WriteCloser, error) {
+	return ts.bucket.NewWriter(ctx, key, nil)
 }
 
 func (ts *AWSCloudStorage) CreateBucket(ctx context.Context, bucketPrefix string, expirationTimeDays int64) error {

@@ -53,11 +53,13 @@ storage, err := storage, err := NewCloudStorage(
 type CloudStorage interface {
 	List(ctx context.Context, prefix string) *ListIterator // iterate over all objects in the folder
 	Get(ctx context.Context, key string) ([]byte, error) // get the object by a name
+	GetReader(ctx context.Context, key string) (io.ReadCloser, error) // get reader to operate with io.ReadCloser
 	Delete(ctx context.Context, key string) error // delete the object by a name
 	CreateBucket(ctx context.Context, bucketPrefix string, expirationTimeDays int64) error // create a bucket. Used only from tests
 	Close() // close connection
 	GetSignedURL(ctx context.Context, key string, expiry time.Duration) (string, error) // create signed URL
 	Write(ctx context.Context, key string, body []byte, contentType *string) error // write the object a file-name
+	GetWriter(ctx context.Context, key string) (io.WriteCloser, error) // get writer to operate with io.WriteCloser
 	Attributes(ctx context.Context, key string) (*Attributes, error) // get object attributes
 }
 ```
@@ -89,6 +91,18 @@ type CloudStorage interface {
         return nil, err
     }   
 
+    fmt.Println(string(storedBody))
+```
+
+##### GetReader(ctx context.Context, key string) (io.ReadCloser, error)
+```go
+    reader, err := storage.GetReader(s.ctx, fileName)
+    if err != nil { 
+        return nil, err
+    }
+    defer reader.Close() // Important to prevent memory leaks
+
+    storedBody, err := ioutil.ReadAll(reader)
     fmt.Println(string(storedBody))
 ```
 
@@ -139,6 +153,36 @@ type CloudStorage interface {
 ##### Write(ctx context.Context, key string, body []byte, contentType *string) error
 ```go
     err := s.storage.Write(s.ctx, fileName, bodyBytes, nil)
+    if err != nil { 
+        return nil, err
+    }   
+```
+
+##### 	GetWriter(ctx context.Context, key string) (io.WriteCloser, error)
+```go
+	body := []byte(`{"key": "value", "key2": "value2"}`)
+
+	writer, err := storage.GetWriter(s.ctx, fileName)
+    if err != nil { 
+        return nil, err
+    }   
+
+	_, err = writer.Write(body[:10])
+    if err != nil { 
+        return nil, err
+    }   
+
+	_, err = writer.Write(body[10:20])
+    if err != nil { 
+        return nil, err
+    }   
+
+	_, err = writer.Write(body[20:])
+    if err != nil { 
+        return nil, err
+    }   
+
+	err = writer.Close()
     if err != nil { 
         return nil, err
     }   

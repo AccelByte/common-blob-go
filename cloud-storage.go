@@ -19,6 +19,7 @@ package commonblobgo
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"time"
 )
@@ -38,7 +39,7 @@ func NewCloudStorage(
 	gcpStorageEmulatorHost string,
 ) (CloudStorage, error) {
 	switch bucketProvider {
-	case "aws":
+	case "", "aws":
 		// 3-rd party library uses global variables
 		if awsS3AccessKeyID != "" {
 			err := os.Setenv("AWS_ACCESS_KEY_ID", awsS3AccessKeyID)
@@ -87,6 +88,8 @@ type CloudStorage interface {
 	GetSignedURL(ctx context.Context, key string, expiry time.Duration) (string, error)
 	Write(ctx context.Context, key string, body []byte, contentType *string) error
 	Attributes(ctx context.Context, key string) (*Attributes, error)
+	GetReader(ctx context.Context, key string) (io.ReadCloser, error)
+	GetWriter(ctx context.Context, key string) (io.WriteCloser, error)
 }
 
 func newListIterator(f func() (*ListObject, error)) *ListIterator {
