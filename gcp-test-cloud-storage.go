@@ -147,7 +147,6 @@ func (ts *GCPTestCloudStorage) GetWriter(ctx context.Context, key string) (io.Wr
 	return ts.bucket.NewWriter(ctx, key, nil)
 }
 
-// Create Create the new bucket
 func (ts *GCPTestCloudStorage) CreateBucket(ctx context.Context, bucketPrefix string, expirationTimeDays int64) error {
 	logrus.Printf("CreateBucket. Name: %s, Prefix: %s, Exp Time: %v", ts.bucketName, bucketPrefix, expirationTimeDays)
 
