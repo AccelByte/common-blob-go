@@ -34,12 +34,13 @@ import (
 )
 
 type GCPCloudStorage struct {
-	client         *storage.Client
-	bucket         *blob.Bucket
-	bucketName     string
-	projectID      string
-	privateKey     string
-	googleAccessID string
+	client            *storage.Client
+	bucket            *blob.Bucket
+	bucketName        string
+	projectID         string
+	privateKey        string
+	googleAccessID    string
+	gcpCredentialJSON string
 
 	bucketCloseFunc func()
 }
@@ -60,10 +61,17 @@ func newGCPCloudStorage(
 
 	var creds *google.Credentials
 
+	var sign signature
+
 	if gcpCredentialJSON != "" {
 		creds, err = google.CredentialsFromJSON(ctx, []byte(gcpCredentialJSON), storage.ScopeFullControl)
 		if err != nil {
 			return nil, fmt.Errorf("unable to initialize GCP creds from JSON: %v", err)
+		}
+
+		err = json.Unmarshal([]byte(gcpCredentialJSON), &sign)
+		if err != nil {
+			return nil, fmt.Errorf("unable to unmarshal credentials: %v", err)
 		}
 	} else {
 		creds, err = gcp.DefaultCredentials(ctx)
@@ -89,17 +97,6 @@ func newGCPCloudStorage(
 		return nil, fmt.Errorf("unable to create GCP HTTP Client: %v", err)
 	}
 
-	var signature signature
-
-	if gcpCredentialJSON == "" {
-		gcpCredentialJSON = string(creds.JSON)
-	}
-
-	err = json.Unmarshal([]byte(gcpCredentialJSON), &signature)
-	if err != nil {
-		return nil, fmt.Errorf("unable to unmarshal credentials: %v", err)
-	}
-
 	bucket, err := gcsblob.OpenBucket(
 		ctx,
 		bucketHTTPClient,
@@ -113,12 +110,13 @@ func newGCPCloudStorage(
 	logrus.Infof("GCPCloudStorage created")
 
 	return &GCPCloudStorage{
-		client:         client,
-		bucketName:     bucketName,
-		bucket:         bucket,
-		projectID:      creds.ProjectID,
-		googleAccessID: signature.GoogleAccessID,
-		privateKey:     signature.PrivateKey,
+		client:            client,
+		gcpCredentialJSON: gcpCredentialJSON,
+		bucketName:        bucketName,
+		bucket:            bucket,
+		projectID:         creds.ProjectID,
+		googleAccessID:    sign.GoogleAccessID,
+		privateKey:        sign.PrivateKey,
 		bucketCloseFunc: func() {
 			bucket.Close()
 		},
@@ -169,6 +167,13 @@ func (ts *GCPCloudStorage) Close() {
 }
 
 func (ts *GCPCloudStorage) GetSignedURL(ctx context.Context, key string, expiry time.Duration) (string, error) {
+	if ts.gcpCredentialJSON == "" {
+		return ts.bucket.SignedURL(ctx, key, &blob.SignedURLOptions{
+			Method: http.MethodGet,
+			Expiry: expiry,
+		})
+	}
+
 	return storage.SignedURL(ts.bucketName, key, &storage.SignedURLOptions{
 		GoogleAccessID: ts.googleAccessID,
 		PrivateKey:     []byte(ts.privateKey),
