@@ -47,7 +47,11 @@ storage, err := storage, err := NewCloudStorage(
 
  * gcpCredentialsJSON string : GCP JSON credentials(optional if bucketProvider==`gcp`). 
    * If empty - the library will attempt to self-configure from k8s GCP API. The Client(service account) should have the role "Service Account Token Creator"
- ![alt text](images/2020-06-25-10_59_01_720.png)
+     <details>
+       <summary>Click to expand</summary>
+
+       ![alt text](images/2020-06-25-10_59_01_720.png)
+     </details>
  
  * gcpStorageEmulatorHost string : GCP storage host. Used only from tests(required if bucketProvider==`gcp` and isTesting == `true`)
 
