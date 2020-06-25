@@ -66,7 +66,7 @@ linters:
 
 linters-settings:
   govet:
-#    check-shadowing: true // enable later(a lot of updates required)
+    check-shadowing: true
 
 issues:
   exclude:
