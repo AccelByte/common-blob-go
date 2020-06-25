@@ -111,7 +111,10 @@ func newGCPTestCloudStorage(
 	}, nil
 }
 
-func (ts *GCPTestCloudStorage) List(ctx context.Context, prefix string) *ListIterator {
+func (ts *GCPTestCloudStorage) List(
+	ctx context.Context,
+	prefix string,
+) *ListIterator {
 	iter := ts.client.Bucket(ts.bucketName).Objects(ctx, &storage.Query{
 		Prefix: prefix,
 	})
@@ -135,12 +138,32 @@ func (ts *GCPTestCloudStorage) List(ctx context.Context, prefix string) *ListIte
 	})
 }
 
-func (ts *GCPTestCloudStorage) Get(ctx context.Context, key string) ([]byte, error) {
+func (ts *GCPTestCloudStorage) Get(
+	ctx context.Context,
+	key string,
+) ([]byte, error) {
 	return ts.bucket.ReadAll(ctx, key)
 }
 
-// Create Create the new bucket
-func (ts *GCPTestCloudStorage) CreateBucket(ctx context.Context, bucketPrefix string, expirationTimeDays int64) error {
+func (ts *GCPTestCloudStorage) GetReader(
+	ctx context.Context,
+	key string,
+) (io.ReadCloser, error) {
+	return ts.bucket.NewReader(ctx, key, nil)
+}
+
+func (ts *GCPTestCloudStorage) GetWriter(
+	ctx context.Context,
+	key string,
+) (io.WriteCloser, error) {
+	return ts.bucket.NewWriter(ctx, key, nil)
+}
+
+func (ts *GCPTestCloudStorage) CreateBucket(
+	ctx context.Context,
+	bucketPrefix string,
+	expirationTimeDays int64,
+) error {
 	logrus.Printf("CreateBucket. Name: %s, Prefix: %s, Exp Time: %v", ts.bucketName, bucketPrefix, expirationTimeDays)
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10) //nolint:gomnd
@@ -170,11 +193,20 @@ func (ts *GCPTestCloudStorage) Close() {
 	ts.bucketCloseFunc()
 }
 
-func (ts *GCPTestCloudStorage) GetSignedURL(ctx context.Context, key string, expiry time.Duration) (string, error) {
+func (ts *GCPTestCloudStorage) GetSignedURL(
+	ctx context.Context,
+	key string,
+	expiry time.Duration,
+) (string, error) {
 	return fmt.Sprintf("http://%s/%s/%s", ts.host, ts.bucketName, key), nil
 }
 
-func (ts *GCPTestCloudStorage) Write(ctx context.Context, key string, body []byte, contentType *string) error {
+func (ts *GCPTestCloudStorage) Write(
+	ctx context.Context,
+	key string,
+	body []byte,
+	contentType *string,
+) error {
 	options := &blob.WriterOptions{}
 	if contentType != nil {
 		options.ContentType = *contentType
@@ -183,11 +215,17 @@ func (ts *GCPTestCloudStorage) Write(ctx context.Context, key string, body []byt
 	return ts.bucket.WriteAll(ctx, key, body, options)
 }
 
-func (ts *GCPTestCloudStorage) Delete(ctx context.Context, key string) error {
+func (ts *GCPTestCloudStorage) Delete(
+	ctx context.Context,
+	key string,
+) error {
 	return ts.client.Bucket(ts.bucketName).Object(key).Delete(ctx)
 }
 
-func (ts *GCPTestCloudStorage) Attributes(ctx context.Context, key string) (*Attributes, error) {
+func (ts *GCPTestCloudStorage) Attributes(
+	ctx context.Context,
+	key string,
+) (*Attributes, error) {
 	attrs, err := ts.client.Bucket(ts.bucketName).Object(key).Attrs(ctx)
 	if err != nil {
 		return nil, err

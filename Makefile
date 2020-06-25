@@ -28,4 +28,4 @@ run:
 	docker-compose up
 
 lint:
-	golangci-lint run --enable-all
+	docker run --rm -v $(PWD):/app -w /app golangci/golangci-lint:v1.27.0 golangci-lint run -v

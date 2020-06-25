@@ -19,10 +19,14 @@ package commonblobgo
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"time"
+
+	compMeta "cloud.google.com/go/compute/metadata"
 )
 
+//nolint:funlen
 func NewCloudStorage(
 	ctx context.Context,
 	isTesting bool,
@@ -38,7 +42,7 @@ func NewCloudStorage(
 	gcpStorageEmulatorHost string,
 ) (CloudStorage, error) {
 	switch bucketProvider {
-	case "aws":
+	case "", "aws":
 		// 3-rd party library uses global variables
 		if awsS3AccessKeyID != "" {
 			err := os.Setenv("AWS_ACCESS_KEY_ID", awsS3AccessKeyID)
@@ -71,7 +75,20 @@ func NewCloudStorage(
 			return newGCPTestCloudStorage(ctx, gcpCredentialsJSON, bucketName)
 		}
 
-		return newGCPCloudStorage(ctx, gcpCredentialsJSON, bucketName)
+		// check that service has been started inside the GCP Kubernetes
+		isOnGCP := compMeta.OnGCE()
+
+		switch {
+		case gcpCredentialsJSON != "":
+			return newExplicitGCPCloudStorage(ctx, gcpCredentialsJSON, bucketName)
+
+		case isOnGCP && gcpCredentialsJSON == "":
+			return newImplicitGCPCloudStorage(ctx, bucketName)
+
+		default:
+			// don't support implicit external configuration
+			return nil, fmt.Errorf("unable to create implicit GCP client without credentials")
+		}
 
 	default:
 		return nil, fmt.Errorf("unsupported Bucket Provider: %s", bucketProvider)
@@ -87,6 +104,8 @@ type CloudStorage interface {
 	GetSignedURL(ctx context.Context, key string, expiry time.Duration) (string, error)
 	Write(ctx context.Context, key string, body []byte, contentType *string) error
 	Attributes(ctx context.Context, key string) (*Attributes, error)
+	GetReader(ctx context.Context, key string) (io.ReadCloser, error)
+	GetWriter(ctx context.Context, key string) (io.WriteCloser, error)
 }
 
 func newListIterator(f func() (*ListObject, error)) *ListIterator {

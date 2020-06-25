@@ -18,66 +18,93 @@ package commonblobgo
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"io"
+	"net/http"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
+	"cloud.google.com/go/storage"
 	"github.com/sirupsen/logrus"
 	"gocloud.dev/blob"
-	"gocloud.dev/blob/s3blob"
+	"gocloud.dev/blob/gcsblob"
+	"gocloud.dev/gcp"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/option"
 )
 
-type AWSCloudStorage struct {
+type ExplicitGCPCloudStorage struct {
+	client          *storage.Client
 	bucket          *blob.Bucket
 	bucketName      string
+	privateKey      []byte
+	googleAccessID  string
 	bucketCloseFunc func()
 }
 
-func newAWSCloudStorage(
+type signature struct {
+	PrivateKey     string `json:"private_key"`
+	GoogleAccessID string `json:"client_email"`
+}
+
+// nolint:funlen
+func newExplicitGCPCloudStorage(
 	ctx context.Context,
-	s3Endpoint string,
-	s3Region string,
+	gcpCredentialJSON string,
 	bucketName string,
-) (*AWSCloudStorage, error) {
-	// create vanilla AWS client
-	var awsConfig aws.Config
+) (*ExplicitGCPCloudStorage, error) {
+	gcpCredentialJSONBytes := []byte(gcpCredentialJSON)
 
-	if s3Endpoint != "" {
-		awsConfig = aws.Config{
-			Endpoint:         aws.String(s3Endpoint),
-			Region:           aws.String(s3Region),
-			S3ForcePathStyle: aws.Bool(true), //path style for localstack
-		}
-	} else {
-		awsConfig = aws.Config{
-			Region:           aws.String(s3Region),
-			S3ForcePathStyle: aws.Bool(true), //path style for localstack
-		}
+	creds, err := google.CredentialsFromJSON(ctx, gcpCredentialJSONBytes, storage.ScopeFullControl)
+	if err != nil {
+		return nil, fmt.Errorf("unable to initialize GCP creds from JSON: %v", err)
 	}
 
-	awsSession, err := session.NewSession(&awsConfig)
+	var sign *signature
+
+	err = json.Unmarshal(gcpCredentialJSONBytes, &sign)
+	if err != nil {
+		return nil, fmt.Errorf("unable to unmarshal credentials: %v", err)
+	}
+
+	client, err := storage.NewClient(ctx, option.WithCredentials(creds))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create GCP client: %v", err)
+	}
+
+	bucketHTTPClient, err := gcp.NewHTTPClient(
+		gcp.DefaultTransport(),
+		gcp.CredentialsTokenSource(creds),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create GCP HTTP Client: %v", err)
+	}
+
+	bucket, err := gcsblob.OpenBucket(
+		ctx,
+		bucketHTTPClient,
+		bucketName,
+		nil,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	bucket, err := s3blob.OpenBucket(ctx, awsSession, bucketName, nil)
-	if err != nil {
-		return nil, err
-	}
+	logrus.Infof("explicit GCP CloudStorage created")
 
-	logrus.Infof("AWSCloudStorage created")
-
-	return &AWSCloudStorage{
-		bucketName: bucketName,
-		bucket:     bucket,
+	return &ExplicitGCPCloudStorage{
+		client:         client,
+		bucketName:     bucketName,
+		bucket:         bucket,
+		googleAccessID: sign.GoogleAccessID,
+		privateKey:     []byte(sign.PrivateKey),
 		bucketCloseFunc: func() {
 			bucket.Close()
 		},
 	}, nil
 }
 
-func (ts *AWSCloudStorage) List(
+func (ts *ExplicitGCPCloudStorage) List(
 	ctx context.Context,
 	prefix string,
 ) *ListIterator {
@@ -100,28 +127,30 @@ func (ts *AWSCloudStorage) List(
 	})
 }
 
-func (ts *AWSCloudStorage) Get(
+func (ts *ExplicitGCPCloudStorage) Get(
 	ctx context.Context,
 	key string,
 ) ([]byte, error) {
-	return ts.bucket.ReadAll(ctx, key)
+	body, err := ts.bucket.ReadAll(ctx, key)
+
+	return body, err
 }
 
-func (ts *AWSCloudStorage) GetReader(
+func (ts *ExplicitGCPCloudStorage) GetReader(
 	ctx context.Context,
 	key string,
 ) (io.ReadCloser, error) {
 	return ts.bucket.NewReader(ctx, key, nil)
 }
 
-func (ts *AWSCloudStorage) GetWriter(
+func (ts *ExplicitGCPCloudStorage) GetWriter(
 	ctx context.Context,
 	key string,
 ) (io.WriteCloser, error) {
 	return ts.bucket.NewWriter(ctx, key, nil)
 }
 
-func (ts *AWSCloudStorage) CreateBucket(
+func (ts *ExplicitGCPCloudStorage) CreateBucket(
 	ctx context.Context,
 	bucketPrefix string,
 	expirationTimeDays int64,
@@ -130,19 +159,24 @@ func (ts *AWSCloudStorage) CreateBucket(
 	return nil
 }
 
-func (ts *AWSCloudStorage) Close() {
+func (ts *ExplicitGCPCloudStorage) Close() {
 	ts.bucketCloseFunc()
 }
 
-func (ts *AWSCloudStorage) GetSignedURL(
+func (ts *ExplicitGCPCloudStorage) GetSignedURL(
 	ctx context.Context,
 	key string,
 	expiry time.Duration,
 ) (string, error) {
-	return ts.bucket.SignedURL(context.Background(), key, &blob.SignedURLOptions{Expiry: expiry})
+	return storage.SignedURL(ts.bucketName, key, &storage.SignedURLOptions{
+		GoogleAccessID: ts.googleAccessID,
+		PrivateKey:     ts.privateKey,
+		Method:         http.MethodGet,
+		Expires:        time.Now().Add(expiry).UTC(),
+	})
 }
 
-func (ts *AWSCloudStorage) Write(
+func (ts *ExplicitGCPCloudStorage) Write(
 	ctx context.Context,
 	key string,
 	body []byte,
@@ -156,14 +190,14 @@ func (ts *AWSCloudStorage) Write(
 	return ts.bucket.WriteAll(ctx, key, body, options)
 }
 
-func (ts *AWSCloudStorage) Delete(
+func (ts *ExplicitGCPCloudStorage) Delete(
 	ctx context.Context,
 	key string,
 ) error {
-	return ts.bucket.Delete(ctx, key)
+	return ts.client.Bucket(ts.bucketName).Object(key).Delete(ctx)
 }
 
-func (ts *AWSCloudStorage) Attributes(
+func (ts *ExplicitGCPCloudStorage) Attributes(
 	ctx context.Context,
 	key string,
 ) (*Attributes, error) {
