@@ -77,7 +77,10 @@ func newAWSCloudStorage(
 	}, nil
 }
 
-func (ts *AWSCloudStorage) List(ctx context.Context, prefix string) *ListIterator {
+func (ts *AWSCloudStorage) List(
+	ctx context.Context,
+	prefix string,
+) *ListIterator {
 	iter := ts.bucket.List(&blob.ListOptions{
 		Prefix: prefix,
 	})
@@ -97,19 +100,32 @@ func (ts *AWSCloudStorage) List(ctx context.Context, prefix string) *ListIterato
 	})
 }
 
-func (ts *AWSCloudStorage) Get(ctx context.Context, key string) ([]byte, error) {
+func (ts *AWSCloudStorage) Get(
+	ctx context.Context,
+	key string,
+) ([]byte, error) {
 	return ts.bucket.ReadAll(ctx, key)
 }
 
-func (ts *AWSCloudStorage) GetReader(ctx context.Context, key string) (io.ReadCloser, error) {
+func (ts *AWSCloudStorage) GetReader(
+	ctx context.Context,
+	key string,
+) (io.ReadCloser, error) {
 	return ts.bucket.NewReader(ctx, key, nil)
 }
 
-func (ts *AWSCloudStorage) GetWriter(ctx context.Context, key string) (io.WriteCloser, error) {
+func (ts *AWSCloudStorage) GetWriter(
+	ctx context.Context,
+	key string,
+) (io.WriteCloser, error) {
 	return ts.bucket.NewWriter(ctx, key, nil)
 }
 
-func (ts *AWSCloudStorage) CreateBucket(ctx context.Context, bucketPrefix string, expirationTimeDays int64) error {
+func (ts *AWSCloudStorage) CreateBucket(
+	ctx context.Context,
+	bucketPrefix string,
+	expirationTimeDays int64,
+) error {
 	// not supported for prod
 	return nil
 }
@@ -118,11 +134,20 @@ func (ts *AWSCloudStorage) Close() {
 	ts.bucketCloseFunc()
 }
 
-func (ts *AWSCloudStorage) GetSignedURL(ctx context.Context, key string, expiry time.Duration) (string, error) {
+func (ts *AWSCloudStorage) GetSignedURL(
+	ctx context.Context,
+	key string,
+	expiry time.Duration,
+) (string, error) {
 	return ts.bucket.SignedURL(context.Background(), key, &blob.SignedURLOptions{Expiry: expiry})
 }
 
-func (ts *AWSCloudStorage) Write(ctx context.Context, key string, body []byte, contentType *string) error {
+func (ts *AWSCloudStorage) Write(
+	ctx context.Context,
+	key string,
+	body []byte,
+	contentType *string,
+) error {
 	options := &blob.WriterOptions{}
 	if contentType != nil {
 		options.ContentType = *contentType
@@ -131,11 +156,17 @@ func (ts *AWSCloudStorage) Write(ctx context.Context, key string, body []byte, c
 	return ts.bucket.WriteAll(ctx, key, body, options)
 }
 
-func (ts *AWSCloudStorage) Delete(ctx context.Context, key string) error {
+func (ts *AWSCloudStorage) Delete(
+	ctx context.Context,
+	key string,
+) error {
 	return ts.bucket.Delete(ctx, key)
 }
 
-func (ts *AWSCloudStorage) Attributes(ctx context.Context, key string) (*Attributes, error) {
+func (ts *AWSCloudStorage) Attributes(
+	ctx context.Context,
+	key string,
+) (*Attributes, error) {
 	attrs, err := ts.bucket.Attributes(ctx, key)
 	if err != nil {
 		return nil, err

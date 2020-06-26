@@ -45,7 +45,14 @@ storage, err := storage, err := NewCloudStorage(
  * awsS3AccessKeyID string : S3 Access key(required if bucketProvider==`aws`)
  * awsS3SecretAccessKey string : S3 secret key(required if bucketProvider==`aws`)
 
- * gcpCredentialsJSON string : GCP JSON credentials(required if bucketProvider==`gcp`)
+ * gcpCredentialsJSON string : GCP JSON credentials(optional if bucketProvider==`gcp`). 
+   * If empty - the library will attempt to self-configure from k8s GCP API. The Client(service account) should have the role "Service Account Token Creator"
+     <details>
+       <summary>Click to expand</summary>
+
+       ![alt text](images/2020-06-25-10_59_01_720.png)
+     </details>
+ 
  * gcpStorageEmulatorHost string : GCP storage host. Used only from tests(required if bucketProvider==`gcp` and isTesting == `true`)
 
 ### Available methods :

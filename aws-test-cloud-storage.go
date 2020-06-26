@@ -83,7 +83,10 @@ func newAWSTestCloudStorage(
 	}, nil
 }
 
-func (ts *AWSTestCloudStorage) List(ctx context.Context, prefix string) *ListIterator {
+func (ts *AWSTestCloudStorage) List(
+	ctx context.Context,
+	prefix string,
+) *ListIterator {
 	iter := ts.bucket.List(&blob.ListOptions{
 		Prefix: prefix,
 	})
@@ -103,19 +106,32 @@ func (ts *AWSTestCloudStorage) List(ctx context.Context, prefix string) *ListIte
 	})
 }
 
-func (ts *AWSTestCloudStorage) Get(ctx context.Context, key string) ([]byte, error) {
+func (ts *AWSTestCloudStorage) Get(
+	ctx context.Context,
+	key string,
+) ([]byte, error) {
 	return ts.bucket.ReadAll(ctx, key)
 }
 
-func (ts *AWSTestCloudStorage) GetReader(ctx context.Context, key string) (io.ReadCloser, error) {
+func (ts *AWSTestCloudStorage) GetReader(
+	ctx context.Context,
+	key string,
+) (io.ReadCloser, error) {
 	return ts.bucket.NewReader(ctx, key, nil)
 }
 
-func (ts *AWSTestCloudStorage) GetWriter(ctx context.Context, key string) (io.WriteCloser, error) {
+func (ts *AWSTestCloudStorage) GetWriter(
+	ctx context.Context,
+	key string,
+) (io.WriteCloser, error) {
 	return ts.bucket.NewWriter(ctx, key, nil)
 }
 
-func (ts *AWSTestCloudStorage) CreateBucket(ctx context.Context, bucketPrefix string, expirationTimeDays int64) error {
+func (ts *AWSTestCloudStorage) CreateBucket(
+	ctx context.Context,
+	bucketPrefix string,
+	expirationTimeDays int64,
+) error {
 	logrus.Printf("CreateBucket. Name: %s, Prefix: %s, Exp Time: %v", ts.bucketName, bucketPrefix, expirationTimeDays)
 
 	if _, err := ts.client.CreateBucket(&s3.CreateBucketInput{
@@ -174,11 +190,20 @@ func (ts *AWSTestCloudStorage) Close() {
 	ts.bucketCloseFunc()
 }
 
-func (ts *AWSTestCloudStorage) GetSignedURL(ctx context.Context, key string, expiry time.Duration) (string, error) {
+func (ts *AWSTestCloudStorage) GetSignedURL(
+	ctx context.Context,
+	key string,
+	expiry time.Duration,
+) (string, error) {
 	return ts.bucket.SignedURL(context.Background(), key, &blob.SignedURLOptions{Expiry: expiry})
 }
 
-func (ts *AWSTestCloudStorage) Write(ctx context.Context, key string, body []byte, contentType *string) error {
+func (ts *AWSTestCloudStorage) Write(
+	ctx context.Context,
+	key string,
+	body []byte,
+	contentType *string,
+) error {
 	options := &blob.WriterOptions{}
 	if contentType != nil {
 		options.ContentType = *contentType
@@ -187,11 +212,17 @@ func (ts *AWSTestCloudStorage) Write(ctx context.Context, key string, body []byt
 	return ts.bucket.WriteAll(ctx, key, body, options)
 }
 
-func (ts *AWSTestCloudStorage) Delete(ctx context.Context, key string) error {
+func (ts *AWSTestCloudStorage) Delete(
+	ctx context.Context,
+	key string,
+) error {
 	return ts.bucket.Delete(ctx, key)
 }
 
-func (ts *AWSTestCloudStorage) Attributes(ctx context.Context, key string) (*Attributes, error) {
+func (ts *AWSTestCloudStorage) Attributes(
+	ctx context.Context,
+	key string,
+) (*Attributes, error) {
 	attrs, err := ts.bucket.Attributes(ctx, key)
 	if err != nil {
 		return nil, err

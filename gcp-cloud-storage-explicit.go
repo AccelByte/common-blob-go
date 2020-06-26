@@ -33,15 +33,12 @@ import (
 	"google.golang.org/api/option"
 )
 
-type GCPCloudStorage struct {
-	client            *storage.Client
-	bucket            *blob.Bucket
-	bucketName        string
-	projectID         string
-	privateKey        string
-	googleAccessID    string
-	gcpCredentialJSON string
-
+type ExplicitGCPCloudStorage struct {
+	client          *storage.Client
+	bucket          *blob.Bucket
+	bucketName      string
+	privateKey      []byte
+	googleAccessID  string
 	bucketCloseFunc func()
 }
 
@@ -51,37 +48,23 @@ type signature struct {
 }
 
 // nolint:funlen
-func newGCPCloudStorage(
+func newExplicitGCPCloudStorage(
 	ctx context.Context,
 	gcpCredentialJSON string,
 	bucketName string,
-) (*GCPCloudStorage, error) {
-	// create vanilla GCP client
-	var err error
+) (*ExplicitGCPCloudStorage, error) {
+	gcpCredentialJSONBytes := []byte(gcpCredentialJSON)
 
-	var creds *google.Credentials
-
-	var sign signature
-
-	if gcpCredentialJSON != "" {
-		creds, err = google.CredentialsFromJSON(ctx, []byte(gcpCredentialJSON), storage.ScopeFullControl)
-		if err != nil {
-			return nil, fmt.Errorf("unable to initialize GCP creds from JSON: %v", err)
-		}
-
-		err = json.Unmarshal([]byte(gcpCredentialJSON), &sign)
-		if err != nil {
-			return nil, fmt.Errorf("unable to unmarshal credentials: %v", err)
-		}
-	} else {
-		creds, err = gcp.DefaultCredentials(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("unable to initialize GCP creds from default credentials: %v", err)
-		}
+	creds, err := google.CredentialsFromJSON(ctx, gcpCredentialJSONBytes, storage.ScopeFullControl)
+	if err != nil {
+		return nil, fmt.Errorf("unable to initialize GCP creds from JSON: %v", err)
 	}
 
-	if creds == nil {
-		return nil, fmt.Errorf("unable to initialize GCP creds from default credentials: %v", err)
+	var sign *signature
+
+	err = json.Unmarshal(gcpCredentialJSONBytes, &sign)
+	if err != nil {
+		return nil, fmt.Errorf("unable to unmarshal credentials: %v", err)
 	}
 
 	client, err := storage.NewClient(ctx, option.WithCredentials(creds))
@@ -107,23 +90,24 @@ func newGCPCloudStorage(
 		return nil, err
 	}
 
-	logrus.Infof("GCPCloudStorage created")
+	logrus.Infof("explicit GCP CloudStorage created")
 
-	return &GCPCloudStorage{
-		client:            client,
-		gcpCredentialJSON: gcpCredentialJSON,
-		bucketName:        bucketName,
-		bucket:            bucket,
-		projectID:         creds.ProjectID,
-		googleAccessID:    sign.GoogleAccessID,
-		privateKey:        sign.PrivateKey,
+	return &ExplicitGCPCloudStorage{
+		client:         client,
+		bucketName:     bucketName,
+		bucket:         bucket,
+		googleAccessID: sign.GoogleAccessID,
+		privateKey:     []byte(sign.PrivateKey),
 		bucketCloseFunc: func() {
 			bucket.Close()
 		},
 	}, nil
 }
 
-func (ts *GCPCloudStorage) List(ctx context.Context, prefix string) *ListIterator {
+func (ts *ExplicitGCPCloudStorage) List(
+	ctx context.Context,
+	prefix string,
+) *ListIterator {
 	iter := ts.bucket.List(&blob.ListOptions{
 		Prefix: prefix,
 	})
@@ -143,46 +127,61 @@ func (ts *GCPCloudStorage) List(ctx context.Context, prefix string) *ListIterato
 	})
 }
 
-func (ts *GCPCloudStorage) Get(ctx context.Context, key string) ([]byte, error) {
+func (ts *ExplicitGCPCloudStorage) Get(
+	ctx context.Context,
+	key string,
+) ([]byte, error) {
 	body, err := ts.bucket.ReadAll(ctx, key)
 
 	return body, err
 }
 
-func (ts *GCPCloudStorage) GetReader(ctx context.Context, key string) (io.ReadCloser, error) {
+func (ts *ExplicitGCPCloudStorage) GetReader(
+	ctx context.Context,
+	key string,
+) (io.ReadCloser, error) {
 	return ts.bucket.NewReader(ctx, key, nil)
 }
 
-func (ts *GCPCloudStorage) GetWriter(ctx context.Context, key string) (io.WriteCloser, error) {
+func (ts *ExplicitGCPCloudStorage) GetWriter(
+	ctx context.Context,
+	key string,
+) (io.WriteCloser, error) {
 	return ts.bucket.NewWriter(ctx, key, nil)
 }
 
-func (ts *GCPCloudStorage) CreateBucket(ctx context.Context, bucketPrefix string, expirationTimeDays int64) error {
+func (ts *ExplicitGCPCloudStorage) CreateBucket(
+	ctx context.Context,
+	bucketPrefix string,
+	expirationTimeDays int64,
+) error {
 	// not supported for prod
 	return nil
 }
 
-func (ts *GCPCloudStorage) Close() {
+func (ts *ExplicitGCPCloudStorage) Close() {
 	ts.bucketCloseFunc()
 }
 
-func (ts *GCPCloudStorage) GetSignedURL(ctx context.Context, key string, expiry time.Duration) (string, error) {
-	if ts.gcpCredentialJSON == "" {
-		return ts.bucket.SignedURL(ctx, key, &blob.SignedURLOptions{
-			Method: http.MethodGet,
-			Expiry: expiry,
-		})
-	}
-
+func (ts *ExplicitGCPCloudStorage) GetSignedURL(
+	ctx context.Context,
+	key string,
+	expiry time.Duration,
+) (string, error) {
 	return storage.SignedURL(ts.bucketName, key, &storage.SignedURLOptions{
 		GoogleAccessID: ts.googleAccessID,
-		PrivateKey:     []byte(ts.privateKey),
+		PrivateKey:     ts.privateKey,
 		Method:         http.MethodGet,
 		Expires:        time.Now().Add(expiry).UTC(),
 	})
 }
 
-func (ts *GCPCloudStorage) Write(ctx context.Context, key string, body []byte, contentType *string) error {
+func (ts *ExplicitGCPCloudStorage) Write(
+	ctx context.Context,
+	key string,
+	body []byte,
+	contentType *string,
+) error {
 	options := &blob.WriterOptions{}
 	if contentType != nil {
 		options.ContentType = *contentType
@@ -191,11 +190,17 @@ func (ts *GCPCloudStorage) Write(ctx context.Context, key string, body []byte, c
 	return ts.bucket.WriteAll(ctx, key, body, options)
 }
 
-func (ts *GCPCloudStorage) Delete(ctx context.Context, key string) error {
+func (ts *ExplicitGCPCloudStorage) Delete(
+	ctx context.Context,
+	key string,
+) error {
 	return ts.client.Bucket(ts.bucketName).Object(key).Delete(ctx)
 }
 
-func (ts *GCPCloudStorage) Attributes(ctx context.Context, key string) (*Attributes, error) {
+func (ts *ExplicitGCPCloudStorage) Attributes(
+	ctx context.Context,
+	key string,
+) (*Attributes, error) {
 	attrs, err := ts.bucket.Attributes(ctx, key)
 	if err != nil {
 		return nil, err

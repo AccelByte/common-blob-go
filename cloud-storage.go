@@ -22,8 +22,11 @@ import (
 	"io"
 	"os"
 	"time"
+
+	compMeta "cloud.google.com/go/compute/metadata"
 )
 
+//nolint:funlen
 func NewCloudStorage(
 	ctx context.Context,
 	isTesting bool,
@@ -72,7 +75,20 @@ func NewCloudStorage(
 			return newGCPTestCloudStorage(ctx, gcpCredentialsJSON, bucketName)
 		}
 
-		return newGCPCloudStorage(ctx, gcpCredentialsJSON, bucketName)
+		// check that service has been started inside the GCP Kubernetes
+		isOnGCP := compMeta.OnGCE()
+
+		switch {
+		case gcpCredentialsJSON != "":
+			return newExplicitGCPCloudStorage(ctx, gcpCredentialsJSON, bucketName)
+
+		case isOnGCP && gcpCredentialsJSON == "":
+			return newImplicitGCPCloudStorage(ctx, bucketName)
+
+		default:
+			// don't support implicit external configuration
+			return nil, fmt.Errorf("unable to create implicit GCP client without credentials")
+		}
 
 	default:
 		return nil, fmt.Errorf("unsupported Bucket Provider: %s", bucketProvider)
