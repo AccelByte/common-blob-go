@@ -152,6 +152,15 @@ func (ts *GCPTestCloudStorage) GetReader(
 	return ts.bucket.NewReader(ctx, key, nil)
 }
 
+func (ts *GCPTestCloudStorage) GetRangeReader(
+	ctx context.Context,
+	key string,
+	offset,
+	length int64,
+) (io.ReadCloser, error) {
+	return ts.bucket.NewRangeReader(ctx, key, offset, length, nil)
+}
+
 func (ts *GCPTestCloudStorage) GetWriter(
 	ctx context.Context,
 	key string,

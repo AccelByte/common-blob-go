@@ -105,6 +105,7 @@ type CloudStorage interface {
 	Write(ctx context.Context, key string, body []byte, contentType *string) error
 	Attributes(ctx context.Context, key string) (*Attributes, error)
 	GetReader(ctx context.Context, key string) (io.ReadCloser, error)
+	GetRangeReader(ctx context.Context, key string, offset, length int64) (io.ReadCloser, error)
 	GetWriter(ctx context.Context, key string) (io.WriteCloser, error)
 }
 

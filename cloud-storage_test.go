@@ -210,6 +210,46 @@ func (s *Suite) TestWriteAndGetUsingReaderAndWriter() {
 	s.Require().JSONEq(string(body), string(storedBody))
 }
 
+func (s *Suite) TestWriteAndGetUsingRangeReader() {
+	fileName := s.generateFileName()
+	body := []byte(`0123456789`)
+
+	writer, err := s.storage.GetWriter(s.ctx, fileName)
+	s.Require().NoError(err)
+
+	_, err = writer.Write(body[:10])
+	s.Require().NoError(err)
+
+	err = writer.Close()
+	s.Require().NoError(err)
+
+	// Read chunk 1 : offset:0, length:5
+	rangeReader, err := s.storage.GetRangeReader(s.ctx, fileName, 0, 5)
+	s.Require().NoError(err)
+
+	chunk1Result, err := ioutil.ReadAll(rangeReader)
+	s.Require().NoError(err)
+	s.Require().NotEmpty(chunk1Result)
+
+	err = rangeReader.Close()
+
+	s.Require().NoError(err)
+	s.Require().Equal(string(chunk1Result), "01234")
+
+	// Read chunk 2 : offset:5, length:5
+	rangeReader, err = s.storage.GetRangeReader(s.ctx, fileName, 5, 5)
+	s.Require().NoError(err)
+
+	chunk2Result, err := ioutil.ReadAll(rangeReader)
+	s.Require().NoError(err)
+	s.Require().NotEmpty(chunk2Result)
+
+	err = rangeReader.Close()
+
+	s.Require().NoError(err)
+	s.Require().Equal(string(chunk2Result), "56789")
+}
+
 func (s *Suite) TestWriteAndList() {
 	fileName := s.generateFileName()
 	body := []byte(`{"key": "value"}`)
