@@ -143,6 +143,15 @@ func (ts *ExplicitGCPCloudStorage) GetReader(
 	return ts.bucket.NewReader(ctx, key, nil)
 }
 
+func (ts *ExplicitGCPCloudStorage) GetRangeReader(
+	ctx context.Context,
+	key string,
+	offset,
+	length int64,
+) (io.ReadCloser, error) {
+	return ts.bucket.NewRangeReader(ctx, key, offset, length, nil)
+}
+
 func (ts *ExplicitGCPCloudStorage) GetWriter(
 	ctx context.Context,
 	key string,

@@ -113,6 +113,18 @@ type CloudStorage interface {
     fmt.Println(string(storedBody))
 ```
 
+##### GetRangeReader(ctx context.Context, key string, offset int64, length int64) (io.ReadCloser, error)
+```go
+    reader, err := storage.GetRangeReader(ctx, fileName, offset, length)
+    if err != nil { 
+        return nil, err
+    }
+    defer reader.Close() // Important to prevent memory leaks
+
+    storedBody, err := ioutil.ReadAll(reader)
+    fmt.Println(string(storedBody))
+```
+
 ##### Delete(ctx context.Context, key string) error
 ```go
     err = storage.Delete(ctx, fileName)
