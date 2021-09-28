@@ -5,7 +5,7 @@ go 1.13
 require (
 	cloud.google.com/go v0.58.0
 	cloud.google.com/go/storage v1.9.0
-	github.com/aws/aws-sdk-go v1.31.14
+	github.com/aws/aws-sdk-go v1.40.50
 	github.com/google/uuid v1.1.1
 	github.com/sirupsen/logrus v1.6.0
 	github.com/stretchr/testify v1.5.1
