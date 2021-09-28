@@ -18,6 +18,7 @@ package commonblobgo
 
 import (
 	"context"
+	"github.com/aws/aws-sdk-go/aws/defaults"
 	"io"
 	"strings"
 	"time"
@@ -58,6 +59,10 @@ func newAWSTestCloudStorage(
 			S3ForcePathStyle: aws.Bool(true), //path style for localstack
 		}
 	}
+
+	// Create default credentials. Default credential wll get the credential from environment provider, shared
+	// credential provider, or ec2 role
+	awsConfig.Credentials = defaults.CredChain(&awsConfig, defaults.Handlers())
 
 	awsSession, err := session.NewSession(&awsConfig)
 	if err != nil {

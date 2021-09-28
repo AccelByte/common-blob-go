@@ -18,6 +18,7 @@ package commonblobgo
 
 import (
 	"context"
+	"github.com/aws/aws-sdk-go/aws/defaults"
 	"io"
 	"time"
 
@@ -56,10 +57,15 @@ func newAWSCloudStorage(
 		}
 	}
 
+	// Create default credentials. Default credential wll get the credential from environment provider, shared
+	// credential provider, or ec2 role
+	awsConfig.Credentials = defaults.CredChain(&awsConfig, defaults.Handlers())
+
 	awsSession, err := session.NewSession(&awsConfig)
 	if err != nil {
 		return nil, err
 	}
+
 
 	bucket, err := s3blob.OpenBucket(ctx, awsSession, bucketName, nil)
 	if err != nil {
