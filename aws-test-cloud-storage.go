@@ -20,7 +20,6 @@ import (
 	"context"
 	"io"
 	"strings"
-	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/defaults"
@@ -207,10 +206,15 @@ func (ts *AWSTestCloudStorage) Close() {
 func (ts *AWSTestCloudStorage) GetSignedURL(
 	ctx context.Context,
 	key string,
-	method string,
-	expiry time.Duration,
+	opts *SignedURLOption,
 ) (string, error) {
-	return ts.bucket.SignedURL(context.Background(), key, &blob.SignedURLOptions{Expiry: expiry, Method: method})
+	options := &blob.SignedURLOptions{
+		Expiry:                   opts.Expiry,
+		Method:                   opts.Method,
+		ContentType:              opts.ContentType,
+		EnforceAbsentContentType: opts.EnforceAbsentContentType,
+	}
+	return ts.bucket.SignedURL(context.Background(), key, options)
 }
 
 func (ts *AWSTestCloudStorage) Write(

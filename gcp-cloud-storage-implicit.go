@@ -175,8 +175,7 @@ func (ts *ImplicitGCPCloudStorage) Close() {
 func (ts *ImplicitGCPCloudStorage) GetSignedURL(
 	ctx context.Context,
 	key string,
-	method string,
-	expiry time.Duration,
+	opts *SignedURLOption,
 ) (string, error) {
 	// we use GCP IAM client to sign bytes body(url)
 	// for details read https://github.com/googleapis/google-cloud-go/issues/1130#issuecomment-484236791
@@ -184,8 +183,8 @@ func (ts *ImplicitGCPCloudStorage) GetSignedURL(
 
 	options := &storage.SignedURLOptions{
 		GoogleAccessID: ts.serviceAccountEmail,
-		Method:         method,
-		Expires:        time.Now().Add(expiry).UTC(),
+		Method:         opts.Method,
+		Expires:        time.Now().Add(opts.Expiry).UTC(),
 		SignBytes: func(b []byte) ([]byte, error) {
 			req := &credentialspb.SignBlobRequest{
 				Payload: b,

@@ -174,14 +174,13 @@ func (ts *ExplicitGCPCloudStorage) Close() {
 func (ts *ExplicitGCPCloudStorage) GetSignedURL(
 	ctx context.Context,
 	key string,
-	method string,
-	expiry time.Duration,
+	opts *SignedURLOption,
 ) (string, error) {
 	return storage.SignedURL(ts.bucketName, key, &storage.SignedURLOptions{
 		GoogleAccessID: ts.googleAccessID,
 		PrivateKey:     ts.privateKey,
-		Method:         method,
-		Expires:        time.Now().Add(expiry).UTC(),
+		Method:         opts.Method,
+		Expires:        time.Now().Add(opts.Expiry).UTC(),
 	})
 }
 
