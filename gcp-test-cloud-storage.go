@@ -205,6 +205,7 @@ func (ts *GCPTestCloudStorage) Close() {
 func (ts *GCPTestCloudStorage) GetSignedURL(
 	ctx context.Context,
 	key string,
+	method string,
 	expiry time.Duration,
 ) (string, error) {
 	return fmt.Sprintf("http://%s/%s/%s", ts.host, ts.bucketName, key), nil

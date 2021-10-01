@@ -101,7 +101,7 @@ type CloudStorage interface {
 	Delete(ctx context.Context, key string) error
 	CreateBucket(ctx context.Context, bucketPrefix string, expirationTimeDays int64) error
 	Close()
-	GetSignedURL(ctx context.Context, key string, expiry time.Duration) (string, error)
+	GetSignedURL(ctx context.Context, key string, method string, expiry time.Duration) (string, error)
 	Write(ctx context.Context, key string, body []byte, contentType *string) error
 	Attributes(ctx context.Context, key string) (*Attributes, error)
 	GetReader(ctx context.Context, key string) (io.ReadCloser, error)

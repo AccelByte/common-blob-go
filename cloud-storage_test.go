@@ -319,7 +319,7 @@ func (s *Suite) TestGetSignedURL() {
 	s.Require().NoError(err)
 	s.Require().NotEmpty(storedBody)
 
-	url, err := s.storage.GetSignedURL(s.ctx, fileName, time.Hour)
+	url, err := s.storage.GetSignedURL(s.ctx, fileName, "GET", time.Hour)
 	s.Require().NoError(err)
 	s.Require().NotEmpty(url)
 }

@@ -18,12 +18,12 @@ package commonblobgo
 
 import (
 	"context"
-	"github.com/aws/aws-sdk-go/aws/defaults"
 	"io"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/defaults"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/sirupsen/logrus"
@@ -207,9 +207,10 @@ func (ts *AWSTestCloudStorage) Close() {
 func (ts *AWSTestCloudStorage) GetSignedURL(
 	ctx context.Context,
 	key string,
+	method string,
 	expiry time.Duration,
 ) (string, error) {
-	return ts.bucket.SignedURL(context.Background(), key, &blob.SignedURLOptions{Expiry: expiry})
+	return ts.bucket.SignedURL(context.Background(), key, &blob.SignedURLOptions{Expiry: expiry, Method: method})
 }
 
 func (ts *AWSTestCloudStorage) Write(

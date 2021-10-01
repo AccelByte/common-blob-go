@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -175,12 +174,13 @@ func (ts *ExplicitGCPCloudStorage) Close() {
 func (ts *ExplicitGCPCloudStorage) GetSignedURL(
 	ctx context.Context,
 	key string,
+	method string,
 	expiry time.Duration,
 ) (string, error) {
 	return storage.SignedURL(ts.bucketName, key, &storage.SignedURLOptions{
 		GoogleAccessID: ts.googleAccessID,
 		PrivateKey:     ts.privateKey,
-		Method:         http.MethodGet,
+		Method:         method,
 		Expires:        time.Now().Add(expiry).UTC(),
 	})
 }

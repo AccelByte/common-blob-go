@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/http"
 	"time"
 
 	compMeta "cloud.google.com/go/compute/metadata"
@@ -176,6 +175,7 @@ func (ts *ImplicitGCPCloudStorage) Close() {
 func (ts *ImplicitGCPCloudStorage) GetSignedURL(
 	ctx context.Context,
 	key string,
+	method string,
 	expiry time.Duration,
 ) (string, error) {
 	// we use GCP IAM client to sign bytes body(url)
@@ -184,7 +184,7 @@ func (ts *ImplicitGCPCloudStorage) GetSignedURL(
 
 	options := &storage.SignedURLOptions{
 		GoogleAccessID: ts.serviceAccountEmail,
-		Method:         http.MethodGet,
+		Method:         method,
 		Expires:        time.Now().Add(expiry).UTC(),
 		SignBytes: func(b []byte) ([]byte, error) {
 			req := &credentialspb.SignBlobRequest{

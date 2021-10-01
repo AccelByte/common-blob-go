@@ -18,11 +18,11 @@ package commonblobgo
 
 import (
 	"context"
-	"github.com/aws/aws-sdk-go/aws/defaults"
 	"io"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/defaults"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/sirupsen/logrus"
 	"gocloud.dev/blob"
@@ -65,7 +65,6 @@ func newAWSCloudStorage(
 	if err != nil {
 		return nil, err
 	}
-
 
 	bucket, err := s3blob.OpenBucket(ctx, awsSession, bucketName, nil)
 	if err != nil {
@@ -152,9 +151,10 @@ func (ts *AWSCloudStorage) Close() {
 func (ts *AWSCloudStorage) GetSignedURL(
 	ctx context.Context,
 	key string,
+	method string,
 	expiry time.Duration,
 ) (string, error) {
-	return ts.bucket.SignedURL(context.Background(), key, &blob.SignedURLOptions{Expiry: expiry})
+	return ts.bucket.SignedURL(context.Background(), key, &blob.SignedURLOptions{Expiry: expiry, Method: method})
 }
 
 func (ts *AWSCloudStorage) Write(
