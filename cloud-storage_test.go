@@ -319,7 +319,14 @@ func (s *Suite) TestGetSignedURL() {
 	s.Require().NoError(err)
 	s.Require().NotEmpty(storedBody)
 
-	url, err := s.storage.GetSignedURL(s.ctx, fileName, time.Hour)
+	options := &SignedURLOption{
+		Expiry:                   time.Hour,
+		Method:                   "GET",
+		ContentType:              "",
+		EnforceAbsentContentType: false,
+	}
+
+	url, err := s.storage.GetSignedURL(s.ctx, fileName, options)
 	s.Require().NoError(err)
 	s.Require().NotEmpty(url)
 }

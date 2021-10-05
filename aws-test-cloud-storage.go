@@ -20,9 +20,9 @@ import (
 	"context"
 	"io"
 	"strings"
-	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/defaults"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/sirupsen/logrus"
@@ -58,6 +58,10 @@ func newAWSTestCloudStorage(
 			S3ForcePathStyle: aws.Bool(true), //path style for localstack
 		}
 	}
+
+	// Create default credentials. Default credential wll get the credential from environment provider, shared
+	// credential provider, or ec2 role
+	awsConfig.Credentials = defaults.CredChain(&awsConfig, defaults.Handlers())
 
 	awsSession, err := session.NewSession(&awsConfig)
 	if err != nil {
@@ -202,9 +206,15 @@ func (ts *AWSTestCloudStorage) Close() {
 func (ts *AWSTestCloudStorage) GetSignedURL(
 	ctx context.Context,
 	key string,
-	expiry time.Duration,
+	opts *SignedURLOption,
 ) (string, error) {
-	return ts.bucket.SignedURL(context.Background(), key, &blob.SignedURLOptions{Expiry: expiry})
+	options := &blob.SignedURLOptions{
+		Expiry:                   opts.Expiry,
+		Method:                   opts.Method,
+		ContentType:              opts.ContentType,
+		EnforceAbsentContentType: opts.EnforceAbsentContentType,
+	}
+	return ts.bucket.SignedURL(context.Background(), key, options)
 }
 
 func (ts *AWSTestCloudStorage) Write(
