@@ -55,6 +55,29 @@ storage, err := storage, err := NewCloudStorage(
  
  * gcpStorageEmulatorHost string : GCP storage host. Used only from tests(required if bucketProvider==`gcp` and isTesting == `true`)
 
+To enable accelerate endpoint in AWS S3 please use `NewCloudStorageV2`:
+
+```go
+storage, err := storage, err := NewCloudStorageV2(
+    ctx,
+    isTesting,
+    bucketProvider,
+    bucketName,
+    awsS3Endpoint,
+    awsS3Region,
+    awsS3AccessKeyID,
+    awsS3SecretAccessKey,
+    awsEnableAccelerate,
+    gcpCredentialsJSON,
+    gcpStorageEmulatorHost,
+)
+```
+
+Additional new parameter in ``NewCloudStorageV2`` :
+* awsEnableAccelerate : a boolean that indicate S3 bucket use accelerate endpoint. **Not available in testing using localstack or using path-style S3 endpoint**.
+
+Note: make sure to enable transfer accelerate in S3 bucket, please refer to [this documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/transfer-acceleration-examples.html).
+
 ### Available methods :
 ```go
 type CloudStorage interface {

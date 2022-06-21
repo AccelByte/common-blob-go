@@ -18,6 +18,7 @@ package commonblobgo
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -38,6 +39,7 @@ func newAWSCloudStorage(
 	s3Endpoint string,
 	s3Region string,
 	bucketName string,
+	enableAccelerateEndpoint bool,
 ) (*AWSCloudStorage, error) {
 	// create vanilla AWS client
 	var awsConfig aws.Config
@@ -46,12 +48,17 @@ func newAWSCloudStorage(
 		awsConfig = aws.Config{
 			Endpoint:         aws.String(s3Endpoint),
 			Region:           aws.String(s3Region),
-			S3ForcePathStyle: aws.Bool(true), //path style for localstack
+			S3ForcePathStyle: aws.Bool(!enableAccelerateEndpoint), //path style for localstack
 		}
 	} else {
 		awsConfig = aws.Config{
-			Region:           aws.String(s3Region),
-			S3ForcePathStyle: aws.Bool(true), //path style for localstack
+			Region: aws.String(s3Region),
+		}
+	}
+	if enableAccelerateEndpoint {
+		awsConfig.S3UseAccelerate = aws.Bool(enableAccelerateEndpoint)
+		if s3Endpoint != "" {
+			return nil, errors.New("cannot use accelerate with path style S3 url")
 		}
 	}
 

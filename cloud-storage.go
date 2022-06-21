@@ -41,6 +41,38 @@ func NewCloudStorage(
 	gcpCredentialsJSON string,
 	gcpStorageEmulatorHost string,
 ) (CloudStorage, error) {
+	return NewCloudStorageV2(
+		ctx,
+		isTesting,
+		bucketProvider,
+		bucketName,
+
+		awsS3Endpoint,
+		awsS3Region,
+		awsS3AccessKeyID,
+		awsS3SecretAccessKey,
+		false,
+		gcpCredentialsJSON,
+		gcpStorageEmulatorHost,
+	)
+}
+
+//nolint:funlen
+func NewCloudStorageV2(
+	ctx context.Context,
+	isTesting bool,
+	bucketProvider string,
+	bucketName string,
+
+	awsS3Endpoint string,
+	awsS3Region string,
+	awsS3AccessKeyID string,
+	awsS3SecretAccessKey string,
+	awsEnableAccelerateEndpoint bool,
+
+	gcpCredentialsJSON string,
+	gcpStorageEmulatorHost string,
+) (CloudStorage, error) {
 	switch bucketProvider {
 	case "", "aws":
 		// 3-rd party library uses global variables
@@ -63,7 +95,7 @@ func NewCloudStorage(
 			return newAWSTestCloudStorage(ctx, awsS3Endpoint, awsS3Region, bucketName)
 		}
 
-		return newAWSCloudStorage(ctx, awsS3Endpoint, awsS3Region, bucketName)
+		return newAWSCloudStorage(ctx, awsS3Endpoint, awsS3Region, bucketName, awsEnableAccelerateEndpoint)
 
 	case "gcp":
 		if isTesting {
