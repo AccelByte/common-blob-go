@@ -40,39 +40,12 @@ func NewCloudStorage(
 
 	gcpCredentialsJSON string,
 	gcpStorageEmulatorHost string,
+
+	opts ...*CloudStorageOption,
 ) (CloudStorage, error) {
-	return NewCloudStorageV2(
-		ctx,
-		isTesting,
-		bucketProvider,
-		bucketName,
 
-		awsS3Endpoint,
-		awsS3Region,
-		awsS3AccessKeyID,
-		awsS3SecretAccessKey,
-		false,
-		gcpCredentialsJSON,
-		gcpStorageEmulatorHost,
-	)
-}
+	cloudStorageOpt := mergeOpts(opts...)
 
-//nolint:funlen
-func NewCloudStorageV2(
-	ctx context.Context,
-	isTesting bool,
-	bucketProvider string,
-	bucketName string,
-
-	awsS3Endpoint string,
-	awsS3Region string,
-	awsS3AccessKeyID string,
-	awsS3SecretAccessKey string,
-	awsEnableAccelerateEndpoint bool,
-
-	gcpCredentialsJSON string,
-	gcpStorageEmulatorHost string,
-) (CloudStorage, error) {
 	switch bucketProvider {
 	case "", "aws":
 		// 3-rd party library uses global variables
@@ -95,7 +68,7 @@ func NewCloudStorageV2(
 			return newAWSTestCloudStorage(ctx, awsS3Endpoint, awsS3Region, bucketName)
 		}
 
-		return newAWSCloudStorage(ctx, awsS3Endpoint, awsS3Region, bucketName, awsEnableAccelerateEndpoint)
+		return newAWSCloudStorage(ctx, awsS3Endpoint, awsS3Region, bucketName, cloudStorageOpt)
 
 	case "gcp":
 		if isTesting {
@@ -145,6 +118,14 @@ func newListIterator(f func() (*ListObject, error)) *ListIterator {
 	return &ListIterator{
 		f: f,
 	}
+}
+
+func mergeOpts(opts ...*CloudStorageOption) *CloudStorageOption {
+	cloudStorageOpt := &CloudStorageOption{}
+	for _, opt := range opts {
+		cloudStorageOpt.AWSEnableS3Accelerate = opt.AWSEnableS3Accelerate
+	}
+	return cloudStorageOpt
 }
 
 // ListIterator iterates over List results.
@@ -207,4 +188,8 @@ type SignedURLOption struct {
 	Expiry                   time.Duration
 	ContentType              string
 	EnforceAbsentContentType bool
+}
+
+type CloudStorageOption struct {
+	AWSEnableS3Accelerate bool
 }
