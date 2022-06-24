@@ -31,7 +31,6 @@ storage, err := storage, err := NewCloudStorage(
     awsS3SecretAccessKey,
     gcpCredentialsJSON,
     gcpStorageEmulatorHost,
-    opts,
 )
 ```
 
