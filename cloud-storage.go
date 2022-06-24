@@ -41,7 +41,7 @@ func NewCloudStorage(
 	gcpCredentialsJSON string,
 	gcpStorageEmulatorHost string,
 ) (CloudStorage, error) {
-	return NewCloudStorageWithOption(ctx, isTesting, bucketProvider, bucketName, &CloudStorageOption{
+	return NewCloudStorageWithOption(ctx, isTesting, bucketProvider, bucketName, CloudStorageOption{
 		AWSS3Endpoint:          awsS3Endpoint,
 		AWSS3Region:            awsS3Region,
 		AWSS3AccessKeyID:       awsS3AccessKeyID,
@@ -53,8 +53,7 @@ func NewCloudStorage(
 }
 
 //nolint:funlen
-func NewCloudStorageWithOption(ctx context.Context, isTesting bool, bucketProvider, bucketName string, opts ...*CloudStorageOption) (CloudStorage, error) {
-	cloudStorageOpts := mergeOpts(opts...)
+func NewCloudStorageWithOption(ctx context.Context, isTesting bool, bucketProvider, bucketName string, cloudStorageOpts CloudStorageOption) (CloudStorage, error) {
 	switch bucketProvider {
 	case "", "aws":
 		// 3-rd party library uses global variables
@@ -127,32 +126,6 @@ func newListIterator(f func() (*ListObject, error)) *ListIterator {
 	return &ListIterator{
 		f: f,
 	}
-}
-
-func mergeOpts(opts ...*CloudStorageOption) *CloudStorageOption {
-	cloudStorageOpt := &CloudStorageOption{}
-	for _, opt := range opts {
-		if opt.AWSS3AccessKeyID != "" {
-			cloudStorageOpt.AWSS3AccessKeyID = opt.AWSS3AccessKeyID
-		}
-		if opt.AWSS3SecretAccessKey != "" {
-			cloudStorageOpt.AWSS3SecretAccessKey = opt.AWSS3SecretAccessKey
-		}
-		if opt.AWSS3Region != "" {
-			cloudStorageOpt.AWSS3Region = opt.AWSS3Region
-		}
-		if opt.AWSS3Endpoint != "" {
-			cloudStorageOpt.AWSS3Endpoint = opt.AWSS3Endpoint
-		}
-		cloudStorageOpt.AWSEnableS3Accelerate = opt.AWSEnableS3Accelerate
-		if opt.GCPStorageEmulatorHost != "" {
-			cloudStorageOpt.GCPStorageEmulatorHost = opt.GCPStorageEmulatorHost
-		}
-		if opt.GCPCredentialsJSON != "" {
-			cloudStorageOpt.GCPCredentialsJSON = opt.GCPCredentialsJSON
-		}
-	}
-	return cloudStorageOpt
 }
 
 // ListIterator iterates over List results.
