@@ -38,7 +38,7 @@ func newAWSCloudStorage(
 	s3Endpoint string,
 	s3Region string,
 	bucketName string,
-	opts *CloudStorageOption,
+	accelerateEndpoint *bool,
 ) (*AWSCloudStorage, error) {
 	// create vanilla AWS client
 	var awsConfig aws.Config
@@ -53,8 +53,8 @@ func newAWSCloudStorage(
 		awsConfig = aws.Config{
 			Region: aws.String(s3Region),
 		}
-		if opts != nil {
-			awsConfig.S3UseAccelerate = aws.Bool(opts.AWSEnableS3Accelerate)
+		if accelerateEndpoint != nil {
+			awsConfig.S3UseAccelerate = accelerateEndpoint
 		}
 	}
 
