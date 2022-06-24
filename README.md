@@ -55,9 +55,6 @@ storage, err := storage, err := NewCloudStorage(
      </details>
  
  * gcpStorageEmulatorHost string : GCP storage host. Used only from tests(required if bucketProvider==`gcp` and isTesting == `true`)
- * opts CloudStorageOption: Cloud storage option to enable/disable some feature of cloud storage.
-   * awsEnableS3Accelerate (default: false) : a boolean that indicate S3 bucket use accelerate endpoint. **Not available in testing using localstack or using path-style S3 endpoint**. 
-     Note: make sure to enable transfer accelerate in S3 bucket, please refer to [this documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/transfer-acceleration-examples.html).
 
 To enable cloud storage additional features:   
 ```go
