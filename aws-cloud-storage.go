@@ -38,6 +38,7 @@ func newAWSCloudStorage(
 	s3Endpoint string,
 	s3Region string,
 	bucketName string,
+	accelerateEndpoint *bool,
 ) (*AWSCloudStorage, error) {
 	// create vanilla AWS client
 	var awsConfig aws.Config
@@ -46,12 +47,14 @@ func newAWSCloudStorage(
 		awsConfig = aws.Config{
 			Endpoint:         aws.String(s3Endpoint),
 			Region:           aws.String(s3Region),
-			S3ForcePathStyle: aws.Bool(true), //path style for localstack
+			S3ForcePathStyle: aws.Bool(true),
 		}
 	} else {
 		awsConfig = aws.Config{
-			Region:           aws.String(s3Region),
-			S3ForcePathStyle: aws.Bool(true), //path style for localstack
+			Region: aws.String(s3Region),
+		}
+		if accelerateEndpoint != nil {
+			awsConfig.S3UseAccelerate = accelerateEndpoint
 		}
 	}
 

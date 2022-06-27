@@ -55,6 +55,24 @@ storage, err := storage, err := NewCloudStorage(
  
  * gcpStorageEmulatorHost string : GCP storage host. Used only from tests(required if bucketProvider==`gcp` and isTesting == `true`)
 
+To enable cloud storage additional features:   
+```go
+storage, err := storage, err := NewCloudStorageWithOption(
+    ctx,
+    isTesting,
+    bucketProvider,
+    bucketName,
+    opts,
+)
+```
+Cloud-specific parameter such as `awsRegion`, `gcpStorageEmulatorHost`, etc. has been moved to `opts CloudStorageOption`.
+
+Supported additional cloud storage feature:
+* `opts.AWSEnableS3Accelerate` (default: false) : a boolean that indicate S3 bucket use accelerate endpoint. **Not available in testing using localstack or using path-style S3 endpoint**.
+Note: make sure to enable transfer accelerate in S3 bucket, please refer to [this documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/transfer-acceleration-examples.html).
+
+
+
 ### Available methods :
 ```go
 type CloudStorage interface {

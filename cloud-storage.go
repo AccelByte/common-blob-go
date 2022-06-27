@@ -41,48 +41,61 @@ func NewCloudStorage(
 	gcpCredentialsJSON string,
 	gcpStorageEmulatorHost string,
 ) (CloudStorage, error) {
+	return NewCloudStorageWithOption(ctx, isTesting, bucketProvider, bucketName, CloudStorageOption{
+		AWSS3Endpoint:          awsS3Endpoint,
+		AWSS3Region:            awsS3Region,
+		AWSS3AccessKeyID:       awsS3AccessKeyID,
+		AWSS3SecretAccessKey:   awsS3SecretAccessKey,
+		AWSEnableS3Accelerate:  false,
+		GCPCredentialsJSON:     gcpCredentialsJSON,
+		GCPStorageEmulatorHost: gcpStorageEmulatorHost,
+	})
+}
+
+//nolint:funlen
+func NewCloudStorageWithOption(ctx context.Context, isTesting bool, bucketProvider, bucketName string, cloudStorageOpts CloudStorageOption) (CloudStorage, error) {
 	switch bucketProvider {
 	case "", "aws":
 		// 3-rd party library uses global variables
-		if awsS3AccessKeyID != "" {
-			err := os.Setenv("AWS_ACCESS_KEY_ID", awsS3AccessKeyID)
+		if cloudStorageOpts.AWSS3AccessKeyID != "" {
+			err := os.Setenv("AWS_ACCESS_KEY_ID", cloudStorageOpts.AWSS3AccessKeyID)
 			if err != nil {
 				return nil, err
 			}
 		}
 
 		// 3-rd party library uses global variables
-		if awsS3SecretAccessKey != "" {
-			err := os.Setenv("AWS_SECRET_ACCESS_KEY", awsS3SecretAccessKey)
+		if cloudStorageOpts.AWSS3SecretAccessKey != "" {
+			err := os.Setenv("AWS_SECRET_ACCESS_KEY", cloudStorageOpts.AWSS3SecretAccessKey)
 			if err != nil {
 				return nil, err
 			}
 		}
 
 		if isTesting {
-			return newAWSTestCloudStorage(ctx, awsS3Endpoint, awsS3Region, bucketName)
+			return newAWSTestCloudStorage(ctx, cloudStorageOpts.AWSS3Endpoint, cloudStorageOpts.AWSS3Region, bucketProvider)
 		}
 
-		return newAWSCloudStorage(ctx, awsS3Endpoint, awsS3Region, bucketName)
+		return newAWSCloudStorage(ctx, cloudStorageOpts.AWSS3Endpoint, cloudStorageOpts.AWSS3Region, bucketProvider, &cloudStorageOpts.AWSEnableS3Accelerate)
 
 	case "gcp":
 		if isTesting {
-			err := os.Setenv("STORAGE_EMULATOR_HOST", gcpStorageEmulatorHost)
+			err := os.Setenv("STORAGE_EMULATOR_HOST", cloudStorageOpts.GCPStorageEmulatorHost)
 			if err != nil {
 				return nil, err
 			}
 
-			return newGCPTestCloudStorage(ctx, gcpCredentialsJSON, bucketName)
+			return newGCPTestCloudStorage(ctx, cloudStorageOpts.GCPCredentialsJSON, bucketName)
 		}
 
 		// check that service has been started inside the GCP Kubernetes
 		isOnGCP := compMeta.OnGCE()
 
 		switch {
-		case gcpCredentialsJSON != "":
-			return newExplicitGCPCloudStorage(ctx, gcpCredentialsJSON, bucketName)
+		case cloudStorageOpts.GCPCredentialsJSON != "":
+			return newExplicitGCPCloudStorage(ctx, cloudStorageOpts.GCPCredentialsJSON, bucketName)
 
-		case isOnGCP && gcpCredentialsJSON == "":
+		case isOnGCP && cloudStorageOpts.GCPCredentialsJSON == "":
 			return newImplicitGCPCloudStorage(ctx, bucketName)
 
 		default:
@@ -175,4 +188,15 @@ type SignedURLOption struct {
 	Expiry                   time.Duration
 	ContentType              string
 	EnforceAbsentContentType bool
+}
+
+type CloudStorageOption struct {
+	AWSS3Endpoint         string
+	AWSS3Region           string
+	AWSS3AccessKeyID      string
+	AWSS3SecretAccessKey  string
+	AWSEnableS3Accelerate bool
+
+	GCPCredentialsJSON     string
+	GCPStorageEmulatorHost string
 }
