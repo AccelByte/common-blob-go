@@ -73,10 +73,10 @@ func NewCloudStorageWithOption(ctx context.Context, isTesting bool, bucketProvid
 		}
 
 		if isTesting {
-			return newAWSTestCloudStorage(ctx, cloudStorageOpts.AWSS3Endpoint, cloudStorageOpts.AWSS3Region, bucketProvider)
+			return newAWSTestCloudStorage(ctx, cloudStorageOpts.AWSS3Endpoint, cloudStorageOpts.AWSS3Region, bucketName)
 		}
 
-		return newAWSCloudStorage(ctx, cloudStorageOpts.AWSS3Endpoint, cloudStorageOpts.AWSS3Region, bucketProvider, &cloudStorageOpts.AWSEnableS3Accelerate)
+		return newAWSCloudStorage(ctx, cloudStorageOpts.AWSS3Endpoint, cloudStorageOpts.AWSS3Region, bucketName, &cloudStorageOpts.AWSEnableS3Accelerate)
 
 	case "gcp":
 		if isTesting {
