@@ -77,6 +77,7 @@ Note: make sure to enable transfer accelerate in S3 bucket, please refer to [thi
 ```go
 type CloudStorage interface {
 	List(ctx context.Context, prefix string) *ListIterator // iterate over all objects in the folder
+	ListWithOptions(ctx context.Context, options *ListOptions) *ListIterator // iterate over objects in the folder based on ListOptions criteria 
 	Get(ctx context.Context, key string) ([]byte, error) // get the object by a name
 	GetReader(ctx context.Context, key string) (io.ReadCloser, error) // get reader to operate with io.ReadCloser
 	Delete(ctx context.Context, key string) error // delete the object by a name
@@ -105,6 +106,33 @@ type CloudStorage interface {
 
         if item.Key == fileName {
             fileFound = true
+        }
+    }
+```
+
+##### ListWithOptions(ctx context.Context, options *ListOptions) *ListIterator
+```go
+    list := storage.CloudStorage.ListWithOptions(parentCtx, &commonblobgo.ListOptions{
+        Prefix:    bucketPrefix,
+
+        // An empty delimiter means that the bucket is treated as a single flat namespace.
+        //
+        // A non-empty delimiter means that any result with the delimiter in its key after Prefix is stripped will be returned with ListObject.IsDir = true,
+        // ListObject.Key truncated after the delimiter. These results represent "directories"
+        Delimiter: "/", 
+    })
+
+    var directories []string
+    for {
+        item, err := list.Next(ctx)
+        if err == io.EOF {
+            break // no more object
+        }
+
+        // ...
+
+        if item.IsDir {
+            directories = append(directories, item.Key)
         }
     }
 ```

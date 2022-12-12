@@ -138,6 +138,37 @@ func (ts *GCPTestCloudStorage) List(
 	})
 }
 
+func (ts *GCPTestCloudStorage) ListWithOptions(
+	ctx context.Context,
+	listOptions *ListOptions,
+) *ListIterator {
+	iter := ts.client.Bucket(ts.bucketName).Objects(ctx, &storage.Query{
+		Prefix:    listOptions.Prefix,
+		Delimiter: listOptions.Delimiter,
+	})
+
+	return newListIterator(func() (*ListObject, error) {
+		attrs, err := iter.Next()
+		if err == iterator.Done {
+			return nil, io.EOF
+		}
+
+		name := attrs.Name
+		isDir := false
+		if attrs.Prefix != "" {
+			name = attrs.Prefix
+			isDir = true
+		}
+		return &ListObject{
+			Key:     name,
+			ModTime: attrs.Updated,
+			Size:    attrs.Size,
+			MD5:     attrs.MD5,
+			IsDir:   isDir,
+		}, nil
+	})
+}
+
 func (ts *GCPTestCloudStorage) Get(
 	ctx context.Context,
 	key string,

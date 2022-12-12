@@ -110,6 +110,7 @@ func NewCloudStorageWithOption(ctx context.Context, isTesting bool, bucketProvid
 
 type CloudStorage interface {
 	List(ctx context.Context, prefix string) *ListIterator
+	ListWithOptions(ctx context.Context, options *ListOptions) *ListIterator
 	Get(ctx context.Context, key string) ([]byte, error)
 	Delete(ctx context.Context, key string) error
 	CreateBucket(ctx context.Context, bucketPrefix string, expirationTimeDays int64) error
@@ -137,6 +138,27 @@ func (i *ListIterator) Next(ctx context.Context) (*ListObject, error) {
 	return i.f()
 }
 
+// ListOptions sets options for listing blobs.
+type ListOptions struct {
+	// Prefix indicates that only blobs with a key starting with this prefix
+	// should be returned.
+	Prefix string
+	// Delimiter sets the delimiter used to define a hierarchical namespace,
+	// like a filesystem with "directories". It is highly recommended that you
+	// use "" or "/" as the Delimiter. Other values should work through this API,
+	// but service UIs generally assume "/".
+	//
+	// An empty delimiter means that the bucket is treated as a single flat
+	// namespace.
+	//
+	// A non-empty delimiter means that any result with the delimiter in its key
+	// after Prefix is stripped will be returned with ListObject.IsDir = true,
+	// ListObject.Key truncated after the delimiter, and zero values for other
+	// ListObject fields. These results represent "directories". Multiple results
+	// in a "directory" are returned as a single result.
+	Delimiter string
+}
+
 // ListObject represents a single blob returned from List.
 type ListObject struct {
 	// Key is the key for this blob.
@@ -147,6 +169,11 @@ type ListObject struct {
 	Size int64
 	// MD5 is an MD5 hash of the blob contents or nil if not available.
 	MD5 []byte
+	// IsDir indicates that this result represents a "directory" in the
+	// hierarchical namespace, ending in ListOptions.Delimiter. Key can be
+	// passed as ListOptions.Prefix to list items in the "directory".
+	// Fields other than Key and IsDir will not be set if IsDir is true.
+	IsDir bool
 }
 
 // Attributes contains attributes about a blob.
