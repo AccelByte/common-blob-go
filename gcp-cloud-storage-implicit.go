@@ -127,6 +127,31 @@ func (ts *ImplicitGCPCloudStorage) List(
 	})
 }
 
+func (ts *ImplicitGCPCloudStorage) ListWithOptions(
+	ctx context.Context,
+	listOptions *ListOptions,
+) *ListIterator {
+	iter := ts.bucket.List(&blob.ListOptions{
+		Prefix:    listOptions.Prefix,
+		Delimiter: listOptions.Delimiter,
+	})
+
+	return newListIterator(func() (*ListObject, error) {
+		attrs, err := iter.Next(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		return &ListObject{
+			Key:     attrs.Key,
+			ModTime: attrs.ModTime,
+			Size:    attrs.Size,
+			MD5:     attrs.MD5,
+			IsDir:   attrs.IsDir,
+		}, nil
+	})
+}
+
 func (ts *ImplicitGCPCloudStorage) Get(
 	ctx context.Context,
 	key string,

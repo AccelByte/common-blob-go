@@ -277,6 +277,44 @@ func (s *Suite) TestWriteAndList() {
 	s.Require().True(fileFound)
 }
 
+func (s *Suite) TestWriteAndListWithOptions() {
+	// file without directory
+	fileNameWithoutDirectory := s.bucketPrefix + "/" + uuid.New().String()
+	body := []byte(`{"key": "value1"}`)
+	err := s.storage.Write(s.ctx, fileNameWithoutDirectory, body, nil)
+	s.Require().NoError(err)
+
+	// file with directory
+	fileNameWithDirectory := s.bucketPrefix + "/directory/" + uuid.New().String()
+	body = []byte(`{"key": "value2"}`)
+	err = s.storage.Write(s.ctx, fileNameWithDirectory, body, nil)
+	s.Require().NoError(err)
+
+	list := s.storage.ListWithOptions(s.ctx, &ListOptions{
+		Prefix:    s.bucketPrefix + "/",
+		Delimiter: "/",
+	})
+	var fileFound int
+	for {
+		item, err := list.Next(s.ctx)
+		if err == io.EOF {
+			break
+		}
+
+		s.Require().NoError(err)
+
+		if item.Key == fileNameWithoutDirectory {
+			s.Require().False(item.IsDir)
+			fileFound++
+		}
+		if item.Key == s.bucketPrefix+"/directory/" {
+			s.Require().True(item.IsDir)
+			fileFound++
+		}
+	}
+	s.Require().Equal(2, fileFound)
+}
+
 func (s *Suite) TestAttributes() {
 	fileName := s.generateFileName()
 	body := []byte(`{"key": "value"}`)
