@@ -279,3 +279,10 @@ func (ts *AWSTestCloudStorage) Attributes(
 		MD5:                attrs.MD5,
 	}, nil
 }
+
+func (ts *AWSTestCloudStorage) Exists(
+	ctx context.Context,
+	key string,
+) (bool, error) {
+	return ts.bucket.Exists(ctx, key)
+}

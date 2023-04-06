@@ -251,3 +251,10 @@ func (ts *ExplicitGCPCloudStorage) Attributes(
 		MD5:                attrs.MD5,
 	}, nil
 }
+
+func (ts *ExplicitGCPCloudStorage) Exists(
+	ctx context.Context,
+	key string,
+) (bool, error) {
+	return ts.bucket.Exists(ctx, key)
+}
