@@ -87,6 +87,7 @@ type CloudStorage interface {
 	Write(ctx context.Context, key string, body []byte, contentType *string) error // write the object a file-name
 	GetWriter(ctx context.Context, key string) (io.WriteCloser, error) // get writer to operate with io.WriteCloser
 	Attributes(ctx context.Context, key string) (*Attributes, error) // get object attributes
+	Exists(ctx context.Context, key string) (bool, error) // check object existence
 }
 ```
 
@@ -261,6 +262,18 @@ type CloudStorage interface {
     }   
     
     fmt.Println(attrs.Size)
+```
+
+##### Exists(ctx context.Context, key string) (bool, error)
+```go
+    isExists, err := storage.Exists(ctx, fileName)
+    if err != nil { 
+        return nil, err
+    }   
+
+    if isExists {
+        fmt.Println("found")
+    }
 ```
 
 ### License

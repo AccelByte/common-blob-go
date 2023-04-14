@@ -227,3 +227,10 @@ func (ts *AWSCloudStorage) Attributes(
 		MD5:                attrs.MD5,
 	}, nil
 }
+
+func (ts *AWSCloudStorage) Exists(
+	ctx context.Context,
+	key string,
+) (bool, error) {
+	return ts.bucket.Exists(ctx, key)
+}

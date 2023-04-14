@@ -271,6 +271,13 @@ func (ts *ImplicitGCPCloudStorage) Attributes(
 	}, nil
 }
 
+func (ts *ImplicitGCPCloudStorage) Exists(
+	ctx context.Context,
+	key string,
+) (bool, error) {
+	return ts.bucket.Exists(ctx, key)
+}
+
 func getDefaultServiceAccountEmail(
 	ctx context.Context,
 	creds *google.Credentials,
