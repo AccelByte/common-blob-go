@@ -19,8 +19,10 @@ package commonblobgo
 import (
 	"context"
 	"io"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/sirupsen/logrus"
 	"gocloud.dev/blob"
@@ -39,6 +41,8 @@ func newAWSCloudStorage(
 	s3Region string,
 	bucketName string,
 	accelerateEndpoint *bool,
+	tokenDuration time.Duration,
+	tokenExpiryWindow time.Duration,
 ) (*AWSCloudStorage, error) {
 	// create vanilla AWS client
 	var awsConfig aws.Config
@@ -58,7 +62,17 @@ func newAWSCloudStorage(
 		}
 	}
 
-	awsSession, err := session.NewSession(&awsConfig)
+	awsSession, err := session.NewSessionWithOptions(session.Options{
+		Config: awsConfig,
+		CredentialsProviderOptions: &session.CredentialsProviderOptions{
+			WebIdentityRoleProviderOptions: func(wirp *stscreds.WebIdentityRoleProvider) {
+				wirp.ExpiryWindow = tokenExpiryWindow
+				wirp.Duration = tokenDuration
+			},
+		},
+	},
+	)
+
 	if err != nil {
 		return nil, err
 	}
