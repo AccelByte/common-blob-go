@@ -76,7 +76,8 @@ func NewCloudStorageWithOption(ctx context.Context, isTesting bool, bucketProvid
 			return newAWSTestCloudStorage(ctx, cloudStorageOpts.AWSS3Endpoint, cloudStorageOpts.AWSS3Region, bucketName)
 		}
 
-		return newAWSCloudStorage(ctx, cloudStorageOpts.AWSS3Endpoint, cloudStorageOpts.AWSS3Region, bucketName, &cloudStorageOpts.AWSEnableS3Accelerate)
+		return newAWSCloudStorage(ctx, cloudStorageOpts.AWSS3Endpoint, cloudStorageOpts.AWSS3Region, bucketName,
+			&cloudStorageOpts.AWSEnableS3Accelerate, cloudStorageOpts.AWSTokenDuration, cloudStorageOpts.AWSTokenExpiryWindow)
 
 	case "gcp":
 		if isTesting {
@@ -224,6 +225,20 @@ type CloudStorageOption struct {
 	AWSS3AccessKeyID      string
 	AWSS3SecretAccessKey  string
 	AWSEnableS3Accelerate bool
+
+	// AWSTokenDuration is the duration of the STS token will be valid. If not set, the assumed role will use default
+	// expiry duration.  See https://docs.aws.amazon.com/sdk-for-go/api/service/sts/#STS.AssumeRoleWithWebIdentity
+	// for more information.
+	//
+	// Important notes: the value MUST BE no more than the maximum session duration of the AWS role.
+	// If unset, it will use the default maximum session duration of the AWS role.
+	AWSTokenDuration time.Duration
+
+	// The amount of time the token will be refreshed before they expire. It's important to refresh token before they
+	// expire to reduce risk of using expired token. The refresh token is not done periodically in the background,
+	// instead will be triggered by any operation using AWS session.
+	// If unset, will default to no expiry window.
+	AWSTokenExpiryWindow time.Duration
 
 	GCPCredentialsJSON     string
 	GCPStorageEmulatorHost string
