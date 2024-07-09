@@ -278,6 +278,10 @@ func (ts *ImplicitGCPCloudStorage) Exists(
 	return ts.bucket.Exists(ctx, key)
 }
 
+func (ts *ImplicitGCPCloudStorage) Copy(ctx context.Context, dstKey, srcKey string) error {
+	return ts.bucket.Copy(ctx, dstKey, srcKey, nil)
+}
+
 func getDefaultServiceAccountEmail(
 	ctx context.Context,
 	creds *google.Credentials,

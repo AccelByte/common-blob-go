@@ -290,3 +290,7 @@ func (ts *GCPTestCloudStorage) Exists(
 ) (bool, error) {
 	return ts.bucket.Exists(ctx, key)
 }
+
+func (ts *GCPTestCloudStorage) Copy(ctx context.Context, dstKey, srcKey string) error {
+	return ts.bucket.Copy(ctx, dstKey, srcKey, nil)
+}

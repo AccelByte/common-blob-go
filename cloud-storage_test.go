@@ -368,3 +368,22 @@ func (s *Suite) TestGetSignedURL() {
 	s.Require().NoError(err)
 	s.Require().NotEmpty(url)
 }
+
+func (s *Suite) TestCopy() {
+	sourceFileName := s.generateFileName()
+	destFileName := s.generateFileName()
+	body := []byte(`{"key": "value"}`)
+
+	err := s.storage.Write(s.ctx, sourceFileName, body, nil)
+	s.Require().NoError(err)
+
+	_, err = s.storage.Get(s.ctx, destFileName)
+	s.Require().Error(err)
+
+	err = s.storage.Copy(s.ctx, destFileName, sourceFileName)
+	s.Require().NoError(err)
+
+	storeBody, err := s.storage.Get(s.ctx, destFileName)
+	s.Require().NoError(err)
+	s.Require().ElementsMatch(body, storeBody)
+}

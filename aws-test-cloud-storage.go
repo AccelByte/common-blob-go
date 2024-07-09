@@ -286,3 +286,7 @@ func (ts *AWSTestCloudStorage) Exists(
 ) (bool, error) {
 	return ts.bucket.Exists(ctx, key)
 }
+
+func (ts *AWSTestCloudStorage) Copy(ctx context.Context, dstKey, srcKey string) error {
+	return ts.bucket.Copy(ctx, dstKey, srcKey, nil)
+}

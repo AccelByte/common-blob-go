@@ -258,3 +258,7 @@ func (ts *ExplicitGCPCloudStorage) Exists(
 ) (bool, error) {
 	return ts.bucket.Exists(ctx, key)
 }
+
+func (ts *ExplicitGCPCloudStorage) Copy(ctx context.Context, dstKey, srcKey string) error {
+	return ts.bucket.Copy(ctx, dstKey, srcKey, nil)
+}
