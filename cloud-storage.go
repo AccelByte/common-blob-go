@@ -123,6 +123,7 @@ type CloudStorage interface {
 	GetRangeReader(ctx context.Context, key string, offset, length int64) (io.ReadCloser, error)
 	GetWriter(ctx context.Context, key string) (io.WriteCloser, error)
 	Exists(ctx context.Context, key string) (bool, error)
+	Copy(ctx context.Context, dstKey, srcKey string) error
 }
 
 func newListIterator(f func() (*ListObject, error)) *ListIterator {

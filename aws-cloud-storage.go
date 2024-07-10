@@ -248,3 +248,7 @@ func (ts *AWSCloudStorage) Exists(
 ) (bool, error) {
 	return ts.bucket.Exists(ctx, key)
 }
+
+func (ts *AWSCloudStorage) Copy(ctx context.Context, dstKey, srcKey string) error {
+	return ts.bucket.Copy(ctx, dstKey, srcKey, nil)
+}
